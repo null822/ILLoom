@@ -11,7 +11,7 @@
                 ^ AttributeTargets.GenericParameter, AllowMultiple = true)]
 public class InjectorDependencyAttribute : Attribute
 {
-    public InjectorDependencyAttribute(string mixin, string mixinClass = "<self>", string modId = "<self>",
+    public InjectorDependencyAttribute(string injector, string injectorClass = "<self>", string modId = "<self>",
         bool invert = false,
         bool optional = false
         ) { }

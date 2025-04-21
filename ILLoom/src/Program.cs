@@ -23,11 +23,14 @@ public static class Program
     /// </summary>
     private static readonly Dictionary<string, MemberReference> HoistRemappings = [];
     
-    private static Assembly _baseGameAssembly = null!;
-    public static Module BaseGame => _baseGameAssembly.MainModule;
-    private static ParentInfo _baseInfo;
+    private static Assembly _targetAssembly = null!;
+    public static Module TargetModule => _targetAssembly.MainModule;
+    
     public static readonly DefaultAssemblyResolver AssemblyResolver = new();
     public static readonly MetadataResolver MetadataResolver = new(AssemblyResolver);
+    
+    private static ParentInfo _targetInfo;
+    
     private static System.Reflection.Assembly _patchedAssembly = null!;
     
     private static int Main(string[] args)
@@ -38,7 +41,7 @@ public static class Program
         Directory.CreateDirectory(ModDirectory);
         _targetPath = args[0];
         
-        _baseGameAssembly = Assembly.ReadAssembly(_targetPath, new ReaderParameters
+        _targetAssembly = Assembly.ReadAssembly(_targetPath, new ReaderParameters
         {
             AssemblyResolver = AssemblyResolver,
             MetadataResolver = MetadataResolver
@@ -46,8 +49,8 @@ public static class Program
         AssemblyResolver.AddSearchDirectory(Path.GetDirectoryName(_targetPath));
         
         // create the remapper
-        _baseInfo = BaseGame.Info;
-        _baseInfo.Remapper = original => IMember.FromBaseRef(Remap(original.MemberBase));
+        _targetInfo = TargetModule.Info;
+        _targetInfo.Remapper = original => IMember.FromBaseRef(Remap(original.MemberBase));
         
         Util.Heading("Loading Mods");
         LoadMods();
@@ -96,37 +99,37 @@ public static class Program
             foreach (var type in mod.CopyTypes)
             {
                 Console.WriteLine($"    - {type.FullName}");
-                var clone = type.Clone(BaseGame.Info);
-                BaseGame.Types.Add(clone);
+                var clone = type.Clone(TargetModule.Info);
+                TargetModule.Types.Add(clone);
             }
             
-            Console.WriteLine("  - Apply Mixins");
+            Console.WriteLine("  - Apply Injectors");
 
-            var mixins = mod.Injectors;
+            var injectors = mod.Injectors;
             
-            var prevMixinApplyState = new int[mixins.Count];
-            var mixinApplyState = new int[mixins.Count];
+            var prevInjectorApplyStates = new int[injectors.Count];
+            var injectorApplyStates = new int[injectors.Count];
             
             var completeCount = 0;
-            var mixinIndex = 0;
-            while (mixins.Count != 0)
+            var injectorIndex = 0;
+            while (injectors.Count != 0)
             {
-                if (mixinIndex >= mixins.Count)
+                if (injectorIndex >= injectors.Count)
                 {
-                    // exit if we applied all the mixins
-                    if (completeCount == mixins.Count) break;
+                    // exit if we applied all the injector
+                    if (completeCount == injectors.Count) break;
                     
-                    // if nothing changed in the previous iteration through the mixins, exit
-                    if (prevMixinApplyState == mixinApplyState)
+                    // if nothing changed in the previous iteration through the injectors, exit
+                    if (prevInjectorApplyStates == injectorApplyStates)
                     {
                         Console.ForegroundColor = ConsoleColor.Yellow;
-                        Console.WriteLine("      - Some Mixins Failed to Apply:");
+                        Console.WriteLine("      - Some Injectors Failed to Apply:");
                         
-                        for (var i = 0; i < mixinApplyState.Length; i++)
+                        for (var i = 0; i < injectorApplyStates.Length; i++)
                         {
-                            if (mixinApplyState[i] == 1) continue;
+                            if (injectorApplyStates[i] == 1) continue;
                             
-                            Console.WriteLine($"          - {mixins[i].Signature}");
+                            Console.WriteLine($"          - {injectors[i].Signature}");
                         }
                         
                         Console.ForegroundColor = ConsoleColor.Gray;
@@ -134,37 +137,38 @@ public static class Program
                         break;
                     }
                     
-                    // otherwise, go through the mixins again
-                    prevMixinApplyState = mixinApplyState;
+                    // otherwise, go through the injectors again
+                    prevInjectorApplyStates = injectorApplyStates;
                     completeCount = 0;
-                    mixinIndex = 0;
+                    injectorIndex = 0;
                 }
                 
-                // if the next mixin was already successfully applied, skip it 
-                if (mixinApplyState[mixinIndex] == 1)
+                // if the next injector was already successfully applied, skip it 
+                if (injectorApplyStates[injectorIndex] == 1)
                 {
-                    mixinIndex++;
+                    injectorIndex++;
                     completeCount++;
                     continue;
                 }
                 
-                // get the next mixin
-                var mixin = mixins[mixinIndex];
+                // get the next injector
+                var injector = injectors[injectorIndex];
                 
-                // TODO: apply the mixins
-                // var success = ApplyMixin(mixin);
+                // TODO: apply the injectors
+                
+                // var success = ApplyInjector(injector);
                 var success = 0;
                 
                 // store the result
-                mixinApplyState[mixinIndex] = success;
+                injectorApplyStates[injectorIndex] = success;
                 
-                // go to the next mixin
-                mixinIndex++;
+                // go to the next injector
+                injectorIndex++;
             }
         }
     }
 
-    public static void BuildAssembly()
+    private static void BuildAssembly()
     {
         foreach (var remapping in HoistRemappings)
         {
@@ -172,20 +176,20 @@ public static class Program
         }
 
         Directory.CreateDirectory("out");
-        _baseGameAssembly.Write("out/patched.dll");
+        _targetAssembly.Write("out/patched.dll");
         
         var targetConfig = _targetPath.Remove(_targetPath.LastIndexOf('.')) + ".runtimeconfig.json";
         File.Copy(targetConfig, "out/patched.runtimeconfig.json", true);
         
         // convert ILWrapper.Member.Assembly into System.Reflection.Assembly
-        var gameAssemblyStream = new MemoryStream();
-        _baseGameAssembly.Write(gameAssemblyStream);
-        _patchedAssembly = System.Reflection.Assembly.Load(gameAssemblyStream.ToArray());
-        gameAssemblyStream.Dispose();
-        _baseGameAssembly.Dispose();
+        var assemblyStream = new MemoryStream();
+        _targetAssembly.Write(assemblyStream);
+        _patchedAssembly = System.Reflection.Assembly.Load(assemblyStream.ToArray());
+        assemblyStream.Dispose();
+        _targetAssembly.Dispose();
     }
 
-    public static void LaunchAssembly()
+    private static void LaunchAssembly()
     {
         // invoke the entrypoint
         

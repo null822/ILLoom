@@ -17,6 +17,19 @@
       <ProjectReference Include="..\LoomModLib\LoomModLib.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Content Include="bin\Debug\net9.0\Game.deps.json" />
+      <Content Include="bin\Debug\net9.0\Game.dll" />
+      <Content Include="bin\Debug\net9.0\Game.exe" />
+      <Content Include="bin\Debug\net9.0\Game.pdb" />
+      <Content Include="bin\Debug\net9.0\Game.runtimeconfig.json" />
+      <Content Include="bin\Debug\net9.0\LoomModLib.dll" />
+      <Content Include="bin\Debug\net9.0\LoomModLib.pdb" />
+      <Content Include="bin\Debug\net9.0\TestMod.deps.json" />
+      <Content Include="bin\Debug\net9.0\TestMod.dll" />
+      <Content Include="bin\Debug\net9.0\TestMod.pdb" />
+    </ItemGroup>
+
     <Target Name="PostBuild" AfterTargets="PostBuildEvent">
         <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" DestinationFolder="../ILLoom/$(OutputPath)/mods" />
     </Target>

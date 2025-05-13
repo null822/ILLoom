@@ -14,7 +14,7 @@ public interface IMember<out TSelf, TBase> where TSelf : IMember<TSelf, TBase>
     
     // public string Signature { get; }
     public string FullName { get; }
-        
+
     public ParentInfo Info => new();
     
     internal static TSelf Create(TBase? @base) => @base == null ? default! : TSelf.FromBase(@base);

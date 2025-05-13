@@ -1,5 +1,7 @@
 ﻿using System.Diagnostics;
+using System.Drawing;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using ILWrapper;
 using Mono.Cecil;
@@ -11,7 +13,6 @@ namespace ILLoom;
 public static class Program
 {
     private static readonly string RootDirectory = Directory.GetCurrentDirectory();
-    private static readonly string ModDirectory = $"{RootDirectory}/mods";
     private static string _targetPath = "";
     
     private static Mod[] _mods = [];
@@ -26,10 +27,14 @@ public static class Program
     private static Assembly _targetAssembly = null!;
     public static Module TargetModule => _targetAssembly.MainModule;
     
-    public static readonly DefaultAssemblyResolver AssemblyResolver = new();
+    public static readonly AssemblyResolver AssemblyResolver = new();
     public static readonly MetadataResolver MetadataResolver = new(AssemblyResolver);
     
-    private static ParentInfo _targetInfo;
+    private static readonly ReaderParameters ReaderParameters = new()
+    {
+        AssemblyResolver = AssemblyResolver,
+        MetadataResolver = MetadataResolver
+    };
     
     private static System.Reflection.Assembly _patchedAssembly = null!;
     
@@ -38,71 +43,116 @@ public static class Program
         if (args.Length < 1)
             throw new Exception("No target application path supplied");
         
-        Directory.CreateDirectory(ModDirectory);
+        Directory.CreateDirectory("mods");
+        Directory.CreateDirectory("libs");
         _targetPath = args[0];
         
-        _targetAssembly = Assembly.ReadAssembly(_targetPath, new ReaderParameters
+        AssemblyResolver.RegisterAssemblies(RuntimeEnvironment.GetRuntimeDirectory());
+        AssemblyResolver.RegisterAssemblies($"{RootDirectory}/libs");
+        
+        _targetAssembly = Assembly.ReadAssembly(_targetPath, ReaderParameters);
+        AssemblyResolver.RegisterAssembly(_targetAssembly);
+        
+        TargetModule.Info = new ParentInfo(TargetModule)
         {
-            AssemblyResolver = AssemblyResolver,
-            MetadataResolver = MetadataResolver
-        });
-        AssemblyResolver.AddSearchDirectory(Path.GetDirectoryName(_targetPath));
+            Remapper = Remap
+        };
         
-        // create the remapper
-        _targetInfo = TargetModule.Info;
-        _targetInfo.Remapper = original => IMember.FromBaseRef(Remap(original.MemberBase));
-        
+        // main script
         Util.Heading("Loading Mods");
         LoadMods();
         Util.Heading("Applying Mods");
         ApplyMods();
         Util.Heading("Build Assembly");
         BuildAssembly();
+        Util.Heading("Modloading Complete", '#');
+        Console.WriteLine();
         Util.Heading("Launch Assembly");
         LaunchAssembly();
-        Util.Heading("Modloading Complete", '#');
         
         return 0;
     }
 
     private static void LoadMods()
     {
-        var modFiles = Directory.GetFiles(ModDirectory);
+        var modFiles = Directory.GetFiles($"{RootDirectory}/mods");
         var mods = new List<Mod>(modFiles.Length);
         var modIds = new List<string>(modFiles.Length);
         foreach (var modFile in modFiles)
         {
-            var asmDef = Assembly.ReadAssembly(modFile, new ReaderParameters
-            {
-                AssemblyResolver = AssemblyResolver,
-                MetadataResolver = MetadataResolver
-            });
+            var assembly = Assembly.ReadAssembly(modFile, ReaderParameters);
             var asm = System.Reflection.Assembly.LoadFile(modFile);
-            var mod = new Mod(asmDef.MainModule, asm);
-            modIds.Add(mod.Config.Id);
-            mods.Add(mod);
+            
+            Console.WriteLine($"Reading File: {Path.GetFileName(modFile)}");
+            foreach (var module in assembly.Modules)
+            {
+                var mod = new Mod(module, asm);
+                modIds.Add(mod.Config.Id);
+                mods.Add(mod);
+            }
         }
         _mods = mods.ToArray();
         _modIds = modIds.ToArray();
         mods.Clear();
         modIds.Clear();
     }
-
+    
     private static void ApplyMods()
+    {
+        Array.ForEach(_mods, m => m.ScanTypeInserters());       // LOAD  [InsertType]
+        ApplyTypeInsertions();                                       // APPLY [InsertType]
+        Array.ForEach(_mods, m => m.RegisterTypeHoisters());    // REG   [HoistType]
+        Array.ForEach(_mods, m => m.RegisterHoisters());        // REG   [Hoist]
+        Array.ForEach(_mods, m => m.ScanInserters());           // LOAD  [Insert]
+        Array.ForEach(_mods, m => m.ScanEnumInjectors());       // LOAD  [InjectEnum]
+        Array.ForEach(_mods, m => m.ScanInjectors());           // LOAD  [Inject]
+        Array.ForEach(_mods, m => m.LoadCopyTypes());           // LOAD  [<none>]
+        CopyTypes();                                                 // APPLY [<none>]
+        ApplyInsertions();                                           // APPLY [Insert]
+        ApplyEnumInjectors();                                        // APPLY [InjectEnum]
+        ApplyInjectors();                                            // APPLY [Inject]
+    }
+    
+    private static void ApplyTypeInsertions()
     {
         foreach (var mod in _mods)
         {
-            Util.Heading(mod.Config.Id, '-');
-            
-            Console.WriteLine("  - Add Types");
-
+            foreach (var typeInserter in mod.TypeInserters)
+            {
+                typeInserter.Apply();
+            }
+        }
+    }
+    
+    private static void CopyTypes()
+    {
+        Console.WriteLine("  - Add Types");
+        
+        foreach (var mod in _mods)
+        {
             foreach (var type in mod.CopyTypes)
             {
                 Console.WriteLine($"    - {type.FullName}");
                 var clone = type.Clone(TargetModule.Info);
                 TargetModule.Types.Add(clone);
             }
-            
+        }
+    }
+    
+    private static void ApplyInsertions()
+    {
+        //TODO
+    }
+    
+    private static void ApplyEnumInjectors()
+    {
+        //TODO
+    }
+    
+    private static void ApplyInjectors()
+    {
+        foreach (var mod in _mods)
+        {
             Console.WriteLine("  - Apply Injectors");
 
             var injectors = mod.Injectors;
@@ -170,10 +220,14 @@ public static class Program
 
     private static void BuildAssembly()
     {
+        Console.WriteLine("Hoist Remappings: ");
+        Console.ForegroundColor = ConsoleColor.DarkGray;
         foreach (var remapping in HoistRemappings)
         {
             Console.WriteLine($"{remapping.Key} => {remapping.Value.FullName}");
         }
+        Console.ForegroundColor = ConsoleColor.Gray;
+
 
         Directory.CreateDirectory("out");
         _targetAssembly.Write("out/patched.dll");
@@ -260,9 +314,9 @@ public static class Program
     /// <summary>
     /// Remap a <see cref="MemberReference"/> using the <see cref="HoistRemappings"/>
     /// </summary>
-    public static MemberReference Remap(MemberReference reference)
+    public static MemberReference Remap(MemberReference? reference)
     {
-        return HoistRemappings.GetValueOrDefault(reference.FullName, reference);
+        return HoistRemappings.GetValueOrDefault(reference!.FullName, reference);
     }
     
     private static string GetMethodSig(MethodBase? method)

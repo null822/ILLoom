@@ -28,7 +28,7 @@ public class InterfaceImplementation : IMember<InterfaceImplementation, Mono.Cec
     {
         MissingParentInfoException.ThrowIfMissing(info, ParentInfoType.Type);
         
-        var interfaceImplementation = new InterfaceImplementation(Type);
+        var interfaceImplementation = new InterfaceImplementation(info.Remap(Type));
         interfaceImplementation.CustomAttributes.ReplaceContents(CustomAttributes, info);
         
         return interfaceImplementation;

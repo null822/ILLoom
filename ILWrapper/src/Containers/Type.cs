@@ -29,18 +29,18 @@ public class Type : IMember<Type, TypeReference>, IMember, IMemberContainer
         Info = new ParentInfo(this);
     }
     
-    public Type(string @namespace, string name, TypeAttributes attributes) :
+    public Type(string? @namespace, string name, TypeAttributes attributes) :
         this(new TypeDefinition(@namespace, name, attributes)) { }
-    public Type(string @namespace, string name, TypeAttributes attributes, Type baseType) :
+    public Type(string? @namespace, string name, TypeAttributes attributes, Type baseType) :
         this(new TypeDefinition(@namespace, name, attributes, baseType.Base)) { }
-    public Type(string @namespace, string name, Module module, IMetadataScope scope) :
+    public Type(string? @namespace, string name, Module module, IMetadataScope scope) :
         this(new TypeReference(@namespace, name, module.Base, scope)) { }
 
     public string Name { get => Base.Name; set => Base.Name = value; }
     public string Namespace { get => Base.Namespace; set => Base.Namespace = value; }
     public string FullName => Base.FullName;
     
-    public Module? Module => IMember<Module, ModuleDefinition>.Create(Base.Module);
+    public Module Module => IMember<Module, ModuleDefinition>.Create(Base.Module);
     
     public TypeAttributes Attributes { get => Base.Resolve().Attributes; set => Base.Resolve().Attributes = value; }
     public Type? BaseType { get => IMember<Type, TypeReference>.Create(Base.Resolve().BaseType); set => Base.Resolve().BaseType = value?.Base; }
@@ -58,6 +58,7 @@ public class Type : IMember<Type, TypeReference>, IMember, IMemberContainer
     
     public Type Clone(ParentInfo info)
     {
+        info.RequireTypes(ParentInfoType.Module);
         var clone = new Type(Namespace, Name, Attributes)
         {
             BaseType = BaseType,

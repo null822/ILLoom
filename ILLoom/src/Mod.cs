@@ -1,4 +1,5 @@
 ﻿using ILLoom.ModuleScanners;
+using ILLoom.Transformers;
 using ILWrapper;
 using ILWrapper.Containers;
 using LoomModLib;
@@ -17,10 +18,11 @@ public class Mod
     /// The <see cref="IModConfig"/> of the mod
     /// </summary>
     public readonly IModConfig Config;
-    /// <summary>
-    /// An array of all <see cref="IInjector"/>s declared in the mod
-    /// </summary>
+    
+    public readonly List<TypeInserter> TypeInserters = [];
     public readonly List<IInjector> Injectors = [];
+    
+    
     /// <summary>
     /// An array of all <see cref="Type"/>s to be copied into the target assembly
     /// </summary>
@@ -28,37 +30,51 @@ public class Mod
     
     public Mod(Module module, System.Reflection.Assembly assembly)
     {
-        Console.WriteLine($"Loading Mod: {module.Name}");
+        // clone the module
         _module = module.Clone(new ParentInfo());
         
-        // scan the mod's module
-        
+        // add the module to the assembly resolver
+        Program.AssemblyResolver.RegisterAssembly(_module.Assembly);
+
+        // scan the module for the mod config
         Config = new ConfigScanner(assembly).Scan(_module);
         
-        Console.WriteLine($"Created Mod: {Config.Id}");
+        Console.WriteLine($" -> Loaded Mod {Config.Id}");
     }
 
     public void ScanTypeInserters()
     {
-        new InsertTypeScanner().Scan(_module);
+        TypeInserters.AddRange(new InsertTypeScanner().Scan(_module));
     }
     
-    public void ScanTypeHoisters()
+    public void RegisterTypeHoisters()
     {
         Program.AddHoistRemappings(new HoistTypeScanner().Scan(_module));
+    }
+    
+    public void RegisterHoisters()
+    {
         Program.AddHoistRemappings(new HoistScanner().Scan(_module));
     }
 
-    public void Scan()
+    public void ScanInserters()
     {
-        //TODO: implement injectors and inserters
-        
+        //TODO: implement inserters
         new InsertScanner().Scan(_module);
-        
+    }
+    
+    public void ScanEnumInjectors()
+    {
+        //TODO: implement injectors
         new InjectorEnumScanner().Scan(_module);
+    }
+    
+    public void ScanInjectors()
+    {
+        //TODO: implement injectors
         new InjectorScanner().Scan(_module);
     }
-
+    
     public void LoadCopyTypes()
     {
         // all remaining types will be copied into the target application

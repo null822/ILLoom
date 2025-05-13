@@ -1,4 +1,5 @@
 ﻿
+using ILWrapper.Containers;
 using ILWrapper.Members;
 using Mono.Cecil;
 using Type = ILWrapper.Containers.Type;
@@ -22,9 +23,9 @@ public class CustomAttribute : IMember<CustomAttribute, Mono.Cecil.CustomAttribu
     public CustomAttribute(Method constructor, byte[]? blob = null) : this(blob == null ?
         new Mono.Cecil.CustomAttribute(constructor.Base) :
         new Mono.Cecil.CustomAttribute(constructor.Base, blob)) {}
-    internal CustomAttribute(Method constructor, ModuleDefinition module, byte[]? blob = null) : this(blob == null ?
-        new Mono.Cecil.CustomAttribute(module.ImportReference(constructor.Base)) :
-        new Mono.Cecil.CustomAttribute(module.ImportReference(constructor.Base), blob)) {}
+    public CustomAttribute(Method constructor, Module module, byte[]? blob = null) : this(blob == null ?
+        new Mono.Cecil.CustomAttribute(module.Base.ImportReference(constructor.Base)) :
+        new Mono.Cecil.CustomAttribute(module.Base.ImportReference(constructor.Base), blob)) {}
 
     public string FullName => $"[{Type.FullName}({ConstructorArguments.ToString(p => p.FullName)})]";
     
@@ -42,7 +43,8 @@ public class CustomAttribute : IMember<CustomAttribute, Mono.Cecil.CustomAttribu
     public CustomAttribute Clone(ParentInfo info)
     {
         MissingParentInfoException.ThrowIfMissing(info, ParentInfoType.Module);
-        var clone = new CustomAttribute(Constructor, info.Module!.Base, Blob);
+        
+        var clone = new CustomAttribute(Constructor, info.Module!, Blob);
         clone.Properties.ReplaceContents(Properties, info);
         clone.Fields.ReplaceContents(Fields, info);
         clone.ConstructorArguments.ReplaceContents(ConstructorArguments, info);

@@ -23,7 +23,7 @@ public class CustomAttributeArg : IMember<CustomAttributeArg, CustomAttributeArg
 
     public CustomAttributeArg Clone(ParentInfo info)
     {
-        var clone = new CustomAttributeArg(Type, Value);
+        var clone = new CustomAttributeArg(info.Remap(Type), Value);
         return clone;
     }
     

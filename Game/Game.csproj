@@ -7,6 +7,14 @@
         <Nullable>enable</Nullable>
         <LangVersion>default</LangVersion>
     </PropertyGroup>
+
+    <ItemGroup>
+      <Content Include="bin\Debug\net9.0\Game.deps.json" />
+      <Content Include="bin\Debug\net9.0\Game.dll" />
+      <Content Include="bin\Debug\net9.0\Game.exe" />
+      <Content Include="bin\Debug\net9.0\Game.pdb" />
+      <Content Include="bin\Debug\net9.0\Game.runtimeconfig.json" />
+    </ItemGroup>
     
     <Target Name="PostBuild" AfterTargets="PostBuildEvent">
         <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" DestinationFolder="../ILLoom/$(OutputPath)/target" />

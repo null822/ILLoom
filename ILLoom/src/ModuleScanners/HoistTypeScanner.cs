@@ -35,31 +35,21 @@ public class HoistTypeScanner : IModuleScanner<List<(string, MemberReference)>>
                 var t = a.Type;
                 
                 return t.Is<HoistTypeAttribute>()
-                    || t.Is<InsertTypeAttribute>();
+                     || t.Is<InsertTypeAttribute>(); // TODO: enable once InsertTypeAttribute is fully implemented
             });
         
         foreach (var attrib in hoistTypeAttribs)
         {
-            var assemblyName = (string)attrib[0];
-            var version = Version.Parse((string)attrib[1]);
-            var @namespace = (string)attrib[2];
-            var targetSignature = (string)attrib[3];
-            
-            var path = targetSignature.Split('.');
-            
-            var targetAssembly = Program.AssemblyResolver.Resolve(new AssemblyNameReference(assemblyName, version));
-            var targetRef = new TypeReference(@namespace, path[0], module.Base, targetAssembly.MainModule);
-            
-            var target = targetRef.Resolve();
-            
-            for (var i = 1; i < path.Length; i++)
-            {
-                target = target.NestedTypes.First(t => t.Name == path[i]);
-            }
+            var target = Util.CreateTypeReference(
+                (string)attrib[0],
+                Version.Parse((string)attrib[1]),
+                (string)attrib[2]);
             
             _hoists.Add((type.Base.FullName, target));
             
-            remove = true;
+            // remove all explicitly [Hoist]ed types
+            if (attrib.Type.Is<HoistTypeAttribute>())
+                remove = true;
         }
         
         

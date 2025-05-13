@@ -28,7 +28,7 @@ public class ExampleInjectors
     }
     
     // inserts a new method (CheckValue(Int32)) into Program that returns a string, is private, and is static
-    // the method is also automatically hoisted (see ExampleInjectors.ProgramFortress) into this class
+    // the method is also automatically hoisted (see ExampleInjectors.ProgramFortress) into this current class
     [Insert("CheckValue", typeof(Program))]
     private static string Test2(int value)
     {
@@ -41,7 +41,7 @@ public class ExampleInjectors
     
     // types (classes, interfaces, structs, etc.) are inserted automatically since they must be in the target application to be used
     // the name (and location) of the inserted type can be changed, however, like so:
-    [InsertType("Game", "1.0.0.0", "Game", "Game.AnotherMessage")]
+    [InsertType("Game", "1.0.0.0", "Game.NewGame/A/B/C/AnotherMessage")]
     // this is, however, optional
     // note that they are automatically hoisted too
     public class Message2
@@ -70,7 +70,7 @@ public class ExampleInjectors
     // all references, calls, and injections to hoisting classes (in this case, ExampleInjectors.ProgramFortress) or any of
     // its members will be redirected to Program.Fortress and its members instead
     // nested types can be hoisted too
-    [HoistType("Game", "1.0.0.0", "Game", "Game.Fortress")]
+    [HoistType("Game", "1.0.0.0", "Game.Game/Fortress")]
     private class ProgramFortress
     {
         // hoist the GetValue method in Program.Fortress
@@ -87,11 +87,11 @@ public class ExampleInjectors
         public int Offset;
         
         // hoisting classes can contain more hoisted types
-        [HoistType("Game", "1.0.0.0", "Game", "Game.Fortress.Basement")]
+        [HoistType("Game", "1.0.0.0", "Game.Game/Fortress/Basement")]
         private class ProgramFortressBasement
         {
             // enums, structs, and interfaces can also be hoisted
-            [HoistType("Game", "1.0.0.0", "Game", "Game.Fortress.Basement.BasementType")]
+            [HoistType("Game", "1.0.0.0", "Game.Game/Fortress/Basement/BasementType")]
             public enum BasementType;
             
             // Hoisting classes can also contain injectors

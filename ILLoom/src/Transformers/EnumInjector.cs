@@ -2,7 +2,7 @@
 using LoomModLib.Attributes;
 using Type = ILWrapper.Containers.Type;
 
-namespace ILLoom.Injectors;
+namespace ILLoom.Transformers;
 
 public class EnumInjector : IInjector
 {
@@ -15,7 +15,7 @@ public class EnumInjector : IInjector
     {
         Type = injector;
         var attributes = injector.CustomAttributes
-            .Where(a => a.Type?.Is<InjectEnumAttribute>() == true).ToArray();
+            .Where(a => a.Type.Is<InjectEnumAttribute>()).ToArray();
 
         Targets = new Type[attributes.Length];
         var signature = new StringBuilder($"{Type.FullName} -> [");

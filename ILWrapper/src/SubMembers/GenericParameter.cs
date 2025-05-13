@@ -27,7 +27,6 @@ public class GenericParameter : IMember<GenericParameter, Mono.Cecil.GenericPara
     
     public GenericParameter Clone(ParentInfo info)
     {
-        
         throw new NotImplementedException();
     }
 

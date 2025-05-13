@@ -45,7 +45,7 @@ public class Parameter : IMember<Parameter, ParameterDefinition>, ISubMember
     
     public Parameter Clone(ParentInfo info)
     {
-        var paremeter = new Parameter(Name, Attributes, Type!)
+        var paremeter = new Parameter(Name, Attributes, info.Remap(Type!))
         {
             Attributes = Attributes,
             MarshalInfo = MarshalInfo,

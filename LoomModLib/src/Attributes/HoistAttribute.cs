@@ -17,5 +17,5 @@ public class HoistAttribute : Attribute
                 | AttributeTargets.Enum)]
 public class HoistTypeAttribute : Attribute
 {
-    public HoistTypeAttribute(string assembly, string version, string @namespace,  string targetType) { }
+    public HoistTypeAttribute(string assembly, string version,  string targetType) { }
 }

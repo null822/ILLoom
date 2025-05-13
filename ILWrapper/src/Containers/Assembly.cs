@@ -38,7 +38,7 @@ public class Assembly : IMember<Assembly, AssemblyDefinition>, IDisposable, IMem
     public Method? Entrypoint => IMember<Method, MethodReference>.Create(Base.EntryPoint);
     public Module MainModule => new(Base.MainModule);
     
-    public IMemberSet<Module> Modules;
+    public readonly IMemberSet<Module> Modules;
     
     public Assembly Clone(ParentInfo info)
     {

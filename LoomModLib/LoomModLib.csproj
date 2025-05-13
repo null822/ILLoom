@@ -7,4 +7,17 @@
         <LangVersion>default</LangVersion>
     </PropertyGroup>
 
+    <ItemGroup>
+      <Content Include="bin\Debug\net8.0\LoomModLib.deps.json" />
+      <Content Include="bin\Debug\net8.0\LoomModLib.dll" />
+      <Content Include="bin\Debug\net8.0\LoomModLib.pdb" />
+      <Content Include="bin\Debug\net9.0\LoomModLib.deps.json" />
+      <Content Include="bin\Debug\net9.0\LoomModLib.dll" />
+      <Content Include="bin\Debug\net9.0\LoomModLib.pdb" />
+    </ItemGroup>
+
+    <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+        <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" DestinationFolder="../ILLoom/$(OutputPath)/libs" />
+    </Target>
+
 </Project>

@@ -11,4 +11,10 @@
       <PackageReference Include="Mono.Cecil" Version="0.11.5" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Content Include="bin\Debug\net9.0\ILWrapper.deps.json" />
+      <Content Include="bin\Debug\net9.0\ILWrapper.dll" />
+      <Content Include="bin\Debug\net9.0\ILWrapper.pdb" />
+    </ItemGroup>
+
 </Project>

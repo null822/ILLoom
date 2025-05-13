@@ -1,23 +1,31 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using ILWrapper.Containers;
 using ILWrapper.Members;
 using ILWrapper.SubMembers;
+using Mono.Cecil;
 using Type = ILWrapper.Containers.Type;
 
 namespace ILWrapper;
 
-public delegate T Remap<T>(T original) where T : IMember;
+public delegate T Remap<T>(T? original) where T : MemberReference;
 
 public struct ParentInfo
 {
-    public Remap<IMember>? Remapper { private get; set; }
-    public T Remap<T>(T original) where T : IMember
+    public Remap<MemberReference>? Remapper { private get; set; }
+    public T RemapRef<T>(T? original) where T : MemberReference
     {
         if (Remapper == null)
-            return original;
+            return original!;
         
         return (T)Remapper(original);
+    }
+    public T Remap<T>(T? original) where T : IMember
+    {
+        if (Remapper == null)
+            return original!;
+        
+        return (T)IMember.FromBaseRef(Remapper(original?.MemberBase));
     }
 
     public void RequireTypes(params ParentInfoType[] infoTypes)
@@ -95,7 +103,7 @@ public enum ParentInfoType
 
 public class MissingParentInfoException : Exception
 {
-    private MissingParentInfoException(ParentInfoType[] missingInfo) : base($"ContainingInfo is missing values for: {InfoToString(missingInfo)}") { }
+    private MissingParentInfoException(ParentInfoType[] missingInfo) : base($"{nameof(ParentInfo)} is missing values for: {InfoToString(missingInfo)}") { }
     
     public static void ThrowIfMissing(ParentInfo info, params ParentInfoType[] infoTypes)
     {

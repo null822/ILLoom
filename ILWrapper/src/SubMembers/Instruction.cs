@@ -79,9 +79,9 @@ public class Instruction : IMember<Instruction, Mono.Cecil.Cil.Instruction>, ISu
             VariableDefinition v => new Instruction(OpCode, v),
             ParameterDefinition v => new Instruction(OpCode, v),
             
-            TypeReference v => new Instruction(OpCode, v, module),
-            MethodReference v => new Instruction(OpCode, v, module),
-            FieldReference v => new Instruction(OpCode, v, module),
+            TypeReference v => new Instruction(OpCode, info.RemapRef(v), module),
+            MethodReference v => new Instruction(OpCode, info.RemapRef(v), module),
+            FieldReference v => new Instruction(OpCode, info.RemapRef(v), module),
             
             _ => new Instruction(OpCode)
         };

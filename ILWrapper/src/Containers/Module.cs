@@ -9,7 +9,7 @@ public class Module : IMember<Module, ModuleDefinition>, IMemberContainer
     public ModuleDefinition Base { get; }
     static TypeConvert<ModuleDefinition, Module> IMember<Module, ModuleDefinition>.FromBase => instance => new Module(instance);
     
-    public ParentInfo Info { get; }
+    public ParentInfo Info { get; set; }
     
     public Module(ModuleDefinition @base)
     {
@@ -42,7 +42,7 @@ public class Module : IMember<Module, ModuleDefinition>, IMemberContainer
     public MetadataToken MetadataToken { get => Base.MetadataToken; set => Base.MetadataToken = value; }
     
     
-    public Assembly? Assembly => IMember<Assembly, AssemblyDefinition>.Create(Base.Assembly);
+    public Assembly Assembly => IMember<Assembly, AssemblyDefinition>.Create(Base.Assembly);
     public IAssemblyResolver? AssemblyResolver => Base.AssemblyResolver;
     public IMetadataResolver? MetadataResolver => Base.MetadataResolver;
     public MetadataScopeType? MetadataScopeType => Base.MetadataScopeType;

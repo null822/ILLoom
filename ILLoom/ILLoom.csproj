@@ -13,4 +13,27 @@
       <ProjectReference Include="..\LoomModLib\LoomModLib.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Content Include="bin\Debug\net8.0\libs\LoomModLib.dll" />
+      <Content Include="bin\Debug\net9.0\ILLoom.deps.json" />
+      <Content Include="bin\Debug\net9.0\ILLoom.dll" />
+      <Content Include="bin\Debug\net9.0\ILLoom.exe" />
+      <Content Include="bin\Debug\net9.0\ILLoom.pdb" />
+      <Content Include="bin\Debug\net9.0\ILLoom.runtimeconfig.json" />
+      <Content Include="bin\Debug\net9.0\ILWrapper.dll" />
+      <Content Include="bin\Debug\net9.0\ILWrapper.pdb" />
+      <Content Include="bin\Debug\net9.0\libs\LoomModLib.dll" />
+      <Content Include="bin\Debug\net9.0\LoomModLib.dll" />
+      <Content Include="bin\Debug\net9.0\LoomModLib.pdb" />
+      <Content Include="bin\Debug\net9.0\mods\TestMod.dll" />
+      <Content Include="bin\Debug\net9.0\Mono.Cecil.dll" />
+      <Content Include="bin\Debug\net9.0\Mono.Cecil.Mdb.dll" />
+      <Content Include="bin\Debug\net9.0\Mono.Cecil.Pdb.dll" />
+      <Content Include="bin\Debug\net9.0\Mono.Cecil.Rocks.dll" />
+      <Content Include="bin\Debug\net9.0\out\patched.dll" />
+      <Content Include="bin\Debug\net9.0\out\patched.runtimeconfig.json" />
+      <Content Include="bin\Debug\net9.0\target\Game.dll" />
+      <Content Include="bin\Debug\net9.0\target\Game.runtimeconfig.json" />
+    </ItemGroup>
+
 </Project>

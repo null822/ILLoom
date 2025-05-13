@@ -18,5 +18,5 @@ public class InsertAttribute : Attribute
                 | AttributeTargets.Enum, AllowMultiple = true)]
 public class InsertTypeAttribute : Attribute
 {
-    public InsertTypeAttribute(string assembly, string version, string @namespace,  string targetType) { }
+    public InsertTypeAttribute(string assembly, string version,  string targetType) { }
 }

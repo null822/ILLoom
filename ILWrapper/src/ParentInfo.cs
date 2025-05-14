@@ -12,7 +12,7 @@ public delegate T Remap<T>(T? original) where T : MemberReference;
 
 public struct ParentInfo
 {
-    public Remap<MemberReference>? Remapper { private get; set; }
+    public Remap<MemberReference>? Remapper { get; set; }
     public T RemapRef<T>(T? original) where T : MemberReference
     {
         if (Remapper == null)

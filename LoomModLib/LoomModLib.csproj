@@ -3,14 +3,11 @@
     <PropertyGroup>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
         <LangVersion>default</LangVersion>
+        <TargetFramework>net9.0</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
-      <Content Include="bin\Debug\net8.0\LoomModLib.deps.json" />
-      <Content Include="bin\Debug\net8.0\LoomModLib.dll" />
-      <Content Include="bin\Debug\net8.0\LoomModLib.pdb" />
       <Content Include="bin\Debug\net9.0\LoomModLib.deps.json" />
       <Content Include="bin\Debug\net9.0\LoomModLib.dll" />
       <Content Include="bin\Debug\net9.0\LoomModLib.pdb" />

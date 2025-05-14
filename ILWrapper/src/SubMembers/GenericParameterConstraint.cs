@@ -1,4 +1,5 @@
-﻿using Type = ILWrapper.Containers.Type;
+﻿using ILWrapper.MemberSet;
+using Type = ILWrapper.Containers.Type;
 
 namespace ILWrapper.SubMembers;
 

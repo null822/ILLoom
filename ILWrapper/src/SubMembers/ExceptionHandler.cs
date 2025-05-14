@@ -1,4 +1,5 @@
-﻿using Mono.Cecil;
+﻿using ILWrapper.MemberSet;
+using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Type = ILWrapper.Containers.Type;
 

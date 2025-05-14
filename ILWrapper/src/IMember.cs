@@ -1,4 +1,5 @@
 ﻿using ILWrapper.Members;
+using ILWrapper.MemberSet;
 using Mono.Cecil;
 using CustomAttribute = ILWrapper.SubMembers.CustomAttribute;
 using Type = ILWrapper.Containers.Type;
@@ -21,11 +22,6 @@ public interface IMember<out TSelf, TBase> where TSelf : IMember<TSelf, TBase>
     
     public TSelf Clone(ParentInfo info);
 
-}
-
-public interface IAssemblyObject
-{
-    
 }
 
 public interface IMember

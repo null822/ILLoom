@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Drawing;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -26,6 +25,7 @@ public static class Program
     
     private static Assembly _targetAssembly = null!;
     public static Module TargetModule => _targetAssembly.MainModule;
+    public static readonly Remap<MemberReference> Remapper = Remap;
     
     public static readonly AssemblyResolver AssemblyResolver = new();
     public static readonly MetadataResolver MetadataResolver = new(AssemblyResolver);
@@ -55,7 +55,7 @@ public static class Program
         
         TargetModule.Info = new ParentInfo(TargetModule)
         {
-            Remapper = Remap
+            Remapper = Remapper
         };
         
         // main script
@@ -113,6 +113,79 @@ public static class Program
         ApplyInjectors();                                            // APPLY [Inject]
     }
     
+    private static void BuildAssembly()
+    {
+        Console.WriteLine("Hoist Remappings: ");
+        Console.ForegroundColor = ConsoleColor.DarkGray;
+        foreach (var remapping in HoistRemappings)
+        {
+            Console.WriteLine($"{remapping.Key} => {remapping.Value.FullName}");
+        }
+        Console.ForegroundColor = ConsoleColor.Gray;
+
+
+        Directory.CreateDirectory("out");
+        _targetAssembly.Write("out/patched.dll");
+        
+        var targetConfig = _targetPath.Remove(_targetPath.LastIndexOf('.')) + ".runtimeconfig.json";
+        File.Copy(targetConfig, "out/patched.runtimeconfig.json", true);
+        
+        // convert ILWrapper.Member.Assembly into System.Reflection.Assembly
+        var assemblyStream = new MemoryStream();
+        _targetAssembly.Write(assemblyStream);
+        _patchedAssembly = System.Reflection.Assembly.Load(assemblyStream.ToArray());
+        assemblyStream.Dispose();
+        _targetAssembly.Dispose();
+    }
+
+    private static void LaunchAssembly()
+    {
+        // invoke the entrypoint
+        
+        var action = ApplicationAction.Constructing;
+        try
+        {
+            var entrypoint = _patchedAssembly.EntryPoint ?? throw new Exception("Game assembly does not contain an entrypoint");
+            var o = Activator.CreateInstance(entrypoint.ReflectedType ??
+                                             throw new Exception("Game assembly does not contain a valid entrypoint"));
+            
+            string[] applicationArgs = ["hello"];
+            action = ApplicationAction.Running;
+            
+            Console.ForegroundColor = ConsoleColor.White;
+            var exitCode = (int)(entrypoint.Invoke(o, [applicationArgs]) ?? 0);
+            
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"Application Exited with Code {exitCode}");
+            
+            action = ApplicationAction.Disposing;
+            // nothing to dispose
+        }
+        catch (Exception e)
+        {
+            if (e is not TargetInvocationException { InnerException: not null } invocationException)
+                throw;
+            
+            var innerException = invocationException.InnerException;
+            
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"Exception thrown when {action.ToString().ToLower()} application: {innerException.GetType()}: {innerException.Message}");
+            
+            var trace = new StackTrace(innerException, true).GetFrames();
+            for (var i = 0; i < trace.Length - 2; i++)
+            {
+                var frame = trace[i];
+                Console.WriteLine($"   at {GetMethodSig(frame.GetMethod())} IL_{frame.GetILOffset():X4}");
+            }
+            
+            Console.ForegroundColor = ConsoleColor.White;
+        }
+        
+        Console.ForegroundColor = ConsoleColor.Gray;
+    }
+
+    #region ApplyMods Stages
+
     private static void ApplyTypeInsertions()
     {
         foreach (var mod in _mods)
@@ -126,7 +199,7 @@ public static class Program
     
     private static void CopyTypes()
     {
-        Console.WriteLine("  - Add Types");
+        Console.WriteLine("  - Copy Types");
         
         foreach (var mod in _mods)
         {
@@ -141,7 +214,13 @@ public static class Program
     
     private static void ApplyInsertions()
     {
-        //TODO
+        foreach (var mod in _mods)
+        {
+            foreach (var inserter in mod.Inserters)
+            {
+                inserter.Apply();
+            }
+        }
     }
     
     private static void ApplyEnumInjectors()
@@ -218,74 +297,8 @@ public static class Program
         }
     }
 
-    private static void BuildAssembly()
-    {
-        Console.WriteLine("Hoist Remappings: ");
-        Console.ForegroundColor = ConsoleColor.DarkGray;
-        foreach (var remapping in HoistRemappings)
-        {
-            Console.WriteLine($"{remapping.Key} => {remapping.Value.FullName}");
-        }
-        Console.ForegroundColor = ConsoleColor.Gray;
+    #endregion
 
-
-        Directory.CreateDirectory("out");
-        _targetAssembly.Write("out/patched.dll");
-        
-        var targetConfig = _targetPath.Remove(_targetPath.LastIndexOf('.')) + ".runtimeconfig.json";
-        File.Copy(targetConfig, "out/patched.runtimeconfig.json", true);
-        
-        // convert ILWrapper.Member.Assembly into System.Reflection.Assembly
-        var assemblyStream = new MemoryStream();
-        _targetAssembly.Write(assemblyStream);
-        _patchedAssembly = System.Reflection.Assembly.Load(assemblyStream.ToArray());
-        assemblyStream.Dispose();
-        _targetAssembly.Dispose();
-    }
-
-    private static void LaunchAssembly()
-    {
-        // invoke the entrypoint
-        
-        var action = ApplicationAction.Constructing;
-        try
-        {
-            var entrypoint = _patchedAssembly.EntryPoint ?? throw new Exception("Game assembly does not contain an entrypoint");
-            var o = Activator.CreateInstance(entrypoint.ReflectedType ??
-                                             throw new Exception("Game assembly does not contain a valid entrypoint"));
-            
-            string[] applicationArgs = ["hello"];
-            action = ApplicationAction.Running;
-            
-            Console.ForegroundColor = ConsoleColor.White;
-            var exitCode = (int)(entrypoint.Invoke(o, [applicationArgs]) ?? 0);
-            
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine($"Application Exited with Code {exitCode}");
-        }
-        catch (Exception e)
-        {
-            if (e is not TargetInvocationException { InnerException: not null } invocationException)
-                throw;
-            
-            var innerException = invocationException.InnerException;
-            
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"Exception thrown when {action.ToString().ToLower()} application: {innerException.GetType()}: {innerException.Message}");
-            
-            var trace = new StackTrace(innerException, true).GetFrames();
-            for (var i = 0; i < trace.Length - 2; i++)
-            {
-                var frame = trace[i];
-                Console.WriteLine($"   at {GetMethodSig(frame.GetMethod())} IL_{frame.GetILOffset():X4}");
-            }
-            
-            Console.ForegroundColor = ConsoleColor.White;
-        }
-        
-        Console.ForegroundColor = ConsoleColor.Gray;
-    }
-    
     /// <summary>
     /// Register a new hoist remap to <see cref="HoistRemappings"/>
     /// </summary>
@@ -322,9 +335,9 @@ public static class Program
     private static string GetMethodSig(MethodBase? method)
     {
         if (method == null) return "";
-
+        
         var s = new StringBuilder();
-
+        
         s.Append(method.DeclaringType?.FullName);
         s.Append('.');
         s.Append(method.Name);
@@ -337,14 +350,14 @@ public static class Program
                 s.Append(parameter.ParameterType.Name);
                 s.Append(' ');
             }
-
+            
             s.Remove(s.Length - 1, 1);
         }
         s.Append(')');
-
+        
         return s.ToString();
     }
-
+    
     private enum ApplicationAction
     {
         Constructing,

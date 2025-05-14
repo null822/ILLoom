@@ -1,13 +1,14 @@
 ﻿using ILWrapper;
 using ILWrapper.Containers;
 using ILWrapper.Members;
+using ILWrapper.MemberSet;
 using LoomModLib.Attributes;
 using Mono.Cecil;
 using Type = ILWrapper.Containers.Type;
 
 namespace ILLoom.ModuleScanners;
 
-public class InjectorEnumScanner : IModuleScanner<object?>
+public class InjectScanner : IModuleScanner<object?>
 {
     public object? Scan(Module module)
     {
@@ -38,7 +39,7 @@ public class InjectorEnumScanner : IModuleScanner<object?>
             var member = members[i];
 
             var attribs = member.CustomAttributes
-                .Where(a => a.Type.Is<InjectEnumAttribute>());
+                .Where(a => a.Type.Is<InjectAttribute>());
             
             foreach (var attrib in attribs)
             {

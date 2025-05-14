@@ -1,4 +1,5 @@
 ﻿using ILWrapper.Containers;
+using ILWrapper.MemberSet;
 using ILWrapper.SubMembers;
 using Mono.Cecil;
 using CustomAttribute = Mono.Cecil.CustomAttribute;
@@ -35,7 +36,7 @@ public class Property : IMember<Property, PropertyDefinition>, IMember
     public object? Constant { get => Base.Resolve().Constant; set => Base.Resolve().Constant = value; }
     public Method? Setter { get => IMember<Method, MethodReference>.Create(Base.Resolve().SetMethod); set => Base.Resolve().SetMethod = value?.Base.Resolve(); }
     public Method? Getter { get => IMember<Method, MethodReference>.Create(Base.Resolve().GetMethod); set => Base.Resolve().GetMethod = value?.Base.Resolve(); }
-    public Type DeclaringType { get => IMember<Type, TypeReference>.Create(Base.DeclaringType); set => Base.DeclaringType = value.Base.Resolve(); }
+    public Type? DeclaringType { get => IMember<Type, TypeReference>.Create(Base.DeclaringType); set => Base.DeclaringType = value?.Base.Resolve(); }
     public PropertyAttributes Attributes { get => Base.Resolve().Attributes; set => Base.Resolve().Attributes = value; }
     public MetadataToken MetadataToken { get => Base.MetadataToken; set => Base.MetadataToken = value; }
     

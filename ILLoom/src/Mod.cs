@@ -20,6 +20,7 @@ public class Mod
     public readonly IModConfig Config;
     
     public readonly List<TypeInserter> TypeInserters = [];
+    public readonly List<Inserter> Inserters = [];
     public readonly List<IInjector> Injectors = [];
     
     
@@ -59,20 +60,19 @@ public class Mod
 
     public void ScanInserters()
     {
-        //TODO: implement inserters
-        new InsertScanner().Scan(_module);
+        Inserters.AddRange(new InsertScanner().Scan(_module));
     }
     
     public void ScanEnumInjectors()
     {
         //TODO: implement injectors
-        new InjectorEnumScanner().Scan(_module);
+        new InjectEnumScanner().Scan(_module);
     }
     
     public void ScanInjectors()
     {
         //TODO: implement injectors
-        new InjectorScanner().Scan(_module);
+        new InjectScanner().Scan(_module);
     }
     
     public void LoadCopyTypes()

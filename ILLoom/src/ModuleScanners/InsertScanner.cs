@@ -1,15 +1,19 @@
-﻿using ILWrapper;
+﻿using ILLoom.Transformers;
+using ILWrapper;
 using ILWrapper.Containers;
 using ILWrapper.Members;
+using ILWrapper.MemberSet;
 using LoomModLib.Attributes;
 using Mono.Cecil;
 using Type = ILWrapper.Containers.Type;
 
 namespace ILLoom.ModuleScanners;
 
-public class InsertScanner : IModuleScanner<object?>
+public class InsertScanner : IModuleScanner<List<Inserter>>
 {
-    public object? Scan(Module module)
+    private readonly List<Inserter> _inserters = [];
+    
+    public List<Inserter> Scan(Module module)
     {
         foreach (var type in module.Types)
         {
@@ -17,7 +21,7 @@ public class InsertScanner : IModuleScanner<object?>
             ScanMembers(type);
         }
         
-        return null;
+        return _inserters;
     }
     
     private void ScanMembers(Type type)
@@ -42,14 +46,15 @@ public class InsertScanner : IModuleScanner<object?>
             
             foreach (var attrib in attribs)
             {
-                var targetMember = (string)attrib[0];
-                var targetType = Program.Remap((TypeReference)attrib[1]);
+                var newName = (string)attrib[0];
+                var targetType = new Type(((TypeReference)Program.Remap((TypeReference)attrib[1])).Resolve());
                 
-                // TODO: add to injectors
+                var inserter = new Inserter(targetType, member, newName);
+                _inserters.Add(inserter);
                 
                 remove = true;
             }
-
+            
             if (remove)
             {
                 // Console.WriteLine(member.MemberBase.FullName);

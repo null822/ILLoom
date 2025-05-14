@@ -1,17 +1,16 @@
 # Goals
 
-## Mixins
-Allows for IL injection into any IL body at any location
+## Transformer Implementations
+- [X] InsertType
+- [X] HoistType
+- [X] Hoist
+- [ ] Insert
+- [ ] InjectEnum
+- [ ] Inject
 
-### IL Inject Targets
-- [ ] Method body
-- [ ] Parameter accessors
+## Other
+- [X] Copy Types
 
-### IL Inject Offset Resolvers
-- [ ] Raw IL offset
 
-### Field Value Modifier Targets
-- [ ] Fields (Default value)
-- [x] Constant fields (Constant value)
 
-## Shadow
+

@@ -1,4 +1,5 @@
 ﻿using ILWrapper.Members;
+using ILWrapper.MemberSet;
 using ILWrapper.Other;
 using ILWrapper.SubMembers;
 using Mono.Cecil;

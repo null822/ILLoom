@@ -14,7 +14,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Content Include="bin\Debug\net8.0\libs\LoomModLib.dll" />
       <Content Include="bin\Debug\net9.0\ILLoom.deps.json" />
       <Content Include="bin\Debug\net9.0\ILLoom.dll" />
       <Content Include="bin\Debug\net9.0\ILLoom.exe" />

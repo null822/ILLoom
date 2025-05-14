@@ -1,6 +1,7 @@
 ﻿using ILWrapper;
 using ILWrapper.Containers;
 using ILWrapper.Members;
+using ILWrapper.MemberSet;
 using LoomModLib.Attributes;
 using Mono.Cecil;
 using Type = ILWrapper.Containers.Type;

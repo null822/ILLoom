@@ -1,4 +1,5 @@
 ﻿using ILWrapper.Containers;
+using ILWrapper.MemberSet;
 using ILWrapper.SubMembers;
 using Mono.Cecil;
 using CustomAttribute = ILWrapper.SubMembers.CustomAttribute;
@@ -35,8 +36,8 @@ public class Method : IMember<Method, MethodReference>, IMember
     
     public Module Module => IMember<Module, ModuleDefinition>.Create(Base.Module);
     
-    public Type ReturnType { get => new(Base.ReturnType); set => Base.ReturnType = value.Base; }
-    public Type DeclaringType { get => IMember<Type, TypeReference>.Create(Base.DeclaringType); set => Base.DeclaringType = value.Base; }
+    public Type ReturnType { get => new(Base.ReturnType); set => Base.ReturnType = value?.Base; }
+    public Type? DeclaringType { get => IMember<Type, TypeReference>.Create(Base.DeclaringType); set => Base.DeclaringType = value?.Base; }
     public MethodBody Body { get => IMember<MethodBody, Mono.Cecil.Cil.MethodBody>.Create(Base.Resolve().Body); set => Base.Resolve().Body = value?.Base; }
     public MethodAttributes Attributes { get => Base.Resolve().Attributes; set => Base.Resolve().Attributes = value; }
     public MetadataToken MetadataToken { get => Base.MetadataToken; set => Base.MetadataToken = value; }

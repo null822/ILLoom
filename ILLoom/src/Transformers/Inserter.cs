@@ -9,7 +9,9 @@ public class Inserter : ITransformer
     private readonly Type _type;
     private readonly IMember _member;
     private readonly string _newName;
-
+    
+    public string Name => $"{_member.MemberBase.FullName} => {_type.FullName} as {_newName}";
+    
     public Inserter(Type type, IMember member, string newName)
     {
         _type = type;

@@ -17,15 +17,17 @@ public class Type : IMember<Type, TypeReference>, IMember, IMemberContainer
     public Type(TypeReference @base)
     {
         Base = @base;
+
+        var baseDef = Base.Resolve();
         
-        Methods = MemberSet<Method, MethodReference>.From(Base.Resolve().Methods);
-        Fields = MemberSet<Field, FieldReference>.From(Base.Resolve().Fields);
-        Properties = new MemberSet<Property, PropertyDefinition>(Base.Resolve().Properties);
-        Events = new MemberSet<Event, EventDefinition>(Base.Resolve().Events);
-        Interfaces = new MemberSet<InterfaceImplementation, Mono.Cecil.InterfaceImplementation>(Base.Resolve().Interfaces);
-        NestedTypes = MemberSet<Type, TypeReference>.From(Base.Resolve().NestedTypes);
+        Methods = MemberSet<Method, MethodReference>.From(baseDef.Methods);
+        Fields = MemberSet<Field, FieldReference>.From(baseDef.Fields);
+        Properties = new MemberSet<Property, PropertyDefinition>(baseDef.Properties);
+        Events = new MemberSet<Event, EventDefinition>(baseDef.Events);
+        Interfaces = new MemberSet<InterfaceImplementation, Mono.Cecil.InterfaceImplementation>(baseDef.Interfaces);
+        NestedTypes = MemberSet<Type, TypeReference>.From(baseDef.NestedTypes);
         GenericParameters = new MemberSet<SubMembers.GenericParameter, GenericParameter>(Base.GenericParameters);
-        CustomAttributes = new MemberSet<SubMembers.CustomAttribute, CustomAttribute>(Base.Resolve().CustomAttributes);
+        CustomAttributes = new MemberSet<SubMembers.CustomAttribute, CustomAttribute>(baseDef.CustomAttributes);
         
         Info = new ParentInfo(this);
     }
@@ -82,12 +84,17 @@ public class Type : IMember<Type, TypeReference>, IMember, IMemberContainer
     {
         return typeof(T).FullName == FullName;
     }
-
-    public bool IsEmpty => Methods.Count == 0 &&
-                           Fields.Count == 0 &&
-                           Properties.Count == 0 &&
-                           Events.Count == 0 &&
-                           NestedTypes.Count == 0;
+    
+    public bool IsEmpty(bool ignoreConstructors = false)
+    {
+        var methodCount = ignoreConstructors ? Methods.Count(m => !m.Base.Resolve().IsConstructor) : Methods.Count;
+        
+        return methodCount == 0 &&
+               Fields.Count == 0 &&
+               Properties.Count == 0 &&
+               Events.Count == 0 &&
+               NestedTypes.Count == 0;
+    }
     
     public override string ToString()
     {

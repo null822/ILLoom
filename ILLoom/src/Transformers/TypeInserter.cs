@@ -11,20 +11,23 @@ public class TypeInserter : ITransformer
     private readonly Assembly _assembly;
     private readonly string _namespace;
     private readonly string[] _path;
-    
+    private readonly string _signature;
+
+    public string Name => $"{_type.FullName} as {_signature}";
+
     public TypeInserter(Type type, Assembly assembly, string signature)
     {
         _type = type;
         _assembly = assembly;
         
+        _signature = signature;
         var separatorIndex = signature.LastIndexOf('.');
         _namespace = signature[..separatorIndex];
         _path = signature[(separatorIndex + 1)..].Split('/');
     }
-
+    
     public void Apply()
     {
-        
         // get the root type
         var targetReference = new TypeReference(
             _namespace,
@@ -70,7 +73,7 @@ public class TypeInserter : ITransformer
         }
         
         // remap the name of the type to insert and add it to the nested types
-        var endType = _type.Clone(new ParentInfo(_assembly.MainModule));
+        var endType = _type.Clone(new ParentInfo(_assembly.MainModule){Remapper = Program.Remapper});
         endType.Name = _path[^1];
         endType.DeclaringType = null;
         nestedTypes[^1] = endType;

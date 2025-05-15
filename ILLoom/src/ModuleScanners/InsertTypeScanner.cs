@@ -16,14 +16,20 @@ public class InsertTypeScanner : IModuleScanner<List<TypeInserter>>
         {
             var type = module.Types[i];
             if (type.FullName == "<Module>") continue;
-            ScanType(type, module); // the types are removed in HoistTypeScanner, not here
+            if (ScanType(type, module))
+            {
+                type.NestedTypes.RemoveAt(i);
+                i--;
+            }
         }
 
         return _inserters;
     }
     
-    private void ScanType(Type type, Module module)
+    private bool ScanType(Type type, Module module)
     {
+        var remove = false;
+        
         var hoistTypeAttribs = type.CustomAttributes
             .Where(a => a.Type.Is<InsertTypeAttribute>());
         
@@ -37,13 +43,21 @@ public class InsertTypeScanner : IModuleScanner<List<TypeInserter>>
             
             var inserter = new TypeInserter(type, new Assembly(targetAssembly), targetSignature);
             _inserters.Add(inserter);
+
+            remove = true;
         }
-        
         
         // scan all nested types
-        foreach (var nestedType in type.NestedTypes)
+        for (var i = 0; i < type.NestedTypes.Count; i++)
         {
-            ScanType(nestedType, module);
+            var nestedType = type.NestedTypes[i];
+            if (ScanType(nestedType, module))
+            {
+                type.NestedTypes.RemoveAt(i);
+                i--;
+            }
         }
+
+        return remove;
     }
 }

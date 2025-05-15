@@ -31,7 +31,7 @@ public class Mod
     
     public Mod(Module module, System.Reflection.Assembly assembly)
     {
-        // clone the module
+        // clone the module without remapping
         _module = module.Clone(new ParentInfo());
         
         // add the module to the assembly resolver
@@ -80,7 +80,7 @@ public class Mod
         // all remaining types will be copied into the target application
         foreach (var type in _module.Types)
         {
-            if (type.IsEmpty) continue;
+            if (type.IsEmpty(true)) continue;
             CopyTypes.Add(type);
         }
     }

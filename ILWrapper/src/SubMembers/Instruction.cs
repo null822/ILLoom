@@ -67,6 +67,8 @@ public class Instruction : IMember<Instruction, Mono.Cecil.Cil.Instruction>, ISu
         
         var clone = Operand switch
         {
+            null => new Instruction(OpCode),
+            
             string v => new Instruction(OpCode, v),
             sbyte v => new Instruction(OpCode, v),
             byte v => new Instruction(OpCode, v),
@@ -84,9 +86,9 @@ public class Instruction : IMember<Instruction, Mono.Cecil.Cil.Instruction>, ISu
             MethodReference v => new Instruction(OpCode, info.RemapRef(v), module),
             FieldReference v => new Instruction(OpCode, info.RemapRef(v), module),
             
-            _ => new Instruction(OpCode)
+            _ => throw new Exception($"Unknown operand type: {Operand.GetType().FullName}")
         };
-        // Console.WriteLine($"{Operand?.GetType()} {Operand} => {clone.Operand} in {info.Module}");
+        // Console.WriteLine($"{OpCode} {Operand?.GetType().Name} {Operand} => {clone.Operand} in {info.Module}");
         clone.Offset = Offset;
         
         return clone;

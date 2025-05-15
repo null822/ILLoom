@@ -99,10 +99,10 @@ public static class Program
     
     private static void ApplyMods()
     {
-        Array.ForEach(_mods, m => m.ScanTypeInserters());       // LOAD  [InsertType]
-        ApplyTypeInsertions();                                       // APPLY [InsertType]
         Array.ForEach(_mods, m => m.RegisterTypeHoisters());    // REG   [HoistType]
         Array.ForEach(_mods, m => m.RegisterHoisters());        // REG   [Hoist]
+        Array.ForEach(_mods, m => m.ScanTypeInserters());       // LOAD  [InsertType]
+        ApplyTypeInsertions();                                       // APPLY [InsertType]
         Array.ForEach(_mods, m => m.ScanInserters());           // LOAD  [Insert]
         Array.ForEach(_mods, m => m.ScanEnumInjectors());       // LOAD  [InjectEnum]
         Array.ForEach(_mods, m => m.ScanInjectors());           // LOAD  [Inject]
@@ -188,10 +188,14 @@ public static class Program
 
     private static void ApplyTypeInsertions()
     {
+        Console.ForegroundColor = ConsoleColor.DarkMagenta;
+        Console.WriteLine("  - Insert Types");
+        Console.ForegroundColor = ConsoleColor.Gray;
         foreach (var mod in _mods)
         {
             foreach (var typeInserter in mod.TypeInserters)
             {
+                Console.WriteLine($"    - {typeInserter.Name}");
                 typeInserter.Apply();
             }
         }
@@ -199,8 +203,9 @@ public static class Program
     
     private static void CopyTypes()
     {
+        Console.ForegroundColor = ConsoleColor.DarkMagenta;
         Console.WriteLine("  - Copy Types");
-        
+        Console.ForegroundColor = ConsoleColor.Gray;
         foreach (var mod in _mods)
         {
             foreach (var type in mod.CopyTypes)
@@ -214,10 +219,14 @@ public static class Program
     
     private static void ApplyInsertions()
     {
+        Console.ForegroundColor = ConsoleColor.DarkMagenta;
+        Console.WriteLine("  - Insert Members");
+        Console.ForegroundColor = ConsoleColor.Gray;
         foreach (var mod in _mods)
         {
             foreach (var inserter in mod.Inserters)
             {
+                Console.WriteLine($"    - {inserter.Name}");
                 inserter.Apply();
             }
         }
@@ -225,15 +234,27 @@ public static class Program
     
     private static void ApplyEnumInjectors()
     {
-        //TODO
+        Console.ForegroundColor = ConsoleColor.DarkMagenta;
+        Console.WriteLine("  - Inject into Enums");
+        Console.ForegroundColor = ConsoleColor.Gray;
+        
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine("      - TODO");
+        Console.ForegroundColor = ConsoleColor.Gray;
     }
     
     private static void ApplyInjectors()
     {
+        Console.ForegroundColor = ConsoleColor.DarkMagenta;
+        Console.WriteLine("  - Inject into Method Bodies");
+        Console.ForegroundColor = ConsoleColor.Gray;
+        
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine("      - TODO");
+        Console.ForegroundColor = ConsoleColor.Gray;
+        
         foreach (var mod in _mods)
         {
-            Console.WriteLine("  - Apply Injectors");
-
             var injectors = mod.Injectors;
             
             var prevInjectorApplyStates = new int[injectors.Count];
@@ -329,7 +350,49 @@ public static class Program
     /// </summary>
     public static MemberReference Remap(MemberReference? reference)
     {
-        return HoistRemappings.GetValueOrDefault(reference!.FullName, reference);
+        // if null, return null
+        if (reference == null) return reference!;
+        
+        // if the reference is to a Type, remap it
+        if (reference is TypeReference typeReference)
+        {
+            // create a list of all types in the nested type chain, starting from the deepest
+            var typeChain = new List<TypeReference>();
+            var type = typeReference;
+            while (type != null)
+            {
+                typeChain.Add(type);
+                type = type.DeclaringType;
+            }
+            
+            // try to remap one type in the chain of nested types
+            for (var i = 0; i < typeChain.Count; i++)
+            {
+                if (HoistRemappings.TryGetValue(typeChain[i].FullName, out var remappedType))
+                {
+                    if (i == 0) return remappedType;
+                    
+                    typeChain[i - 1].DeclaringType = (TypeReference)remappedType;
+                    return reference;
+                }
+            }
+            
+            // otherwise, just return the original
+            return reference;
+        }
+        
+        // if the reference exists explicitly, remap it
+        if (HoistRemappings.TryGetValue(reference.FullName, out var remappedMember))
+            return remappedMember;
+        
+        // otherwise, try to remap the declaring type
+        try {
+            reference.DeclaringType = (TypeReference)Remap(reference.DeclaringType);
+        }
+        catch (InvalidOperationException) {}
+        
+        // return the reference
+        return reference;
     }
     
     private static string GetMethodSig(MethodBase? method)

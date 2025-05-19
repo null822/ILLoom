@@ -1,5 +1,7 @@
-﻿using Mono.Cecil;
+﻿using ILWrapper.Containers;
+using Mono.Cecil;
 using Module = ILWrapper.Containers.Module;
+using CustomAttribute = ILWrapper.SubMembers.CustomAttribute;
 
 namespace ILLoom;
 
@@ -14,7 +16,16 @@ public static class Util
         Console.WriteLine($"{"".PadRight(dashesL, c)}[ {s} ]{"".PadRight(dashesR, c)}");
         Console.ForegroundColor = ConsoleColor.Gray;
     }
-
+    
+    public static CustomAttribute GetDontCopyAttribute()
+    {
+        var asmName = new AssemblyNameDefinition("LoomModLib", new Version(1, 0));
+        var asm = new Assembly(Program.AssemblyResolver.Resolve(asmName));
+        var type = asm.MainModule.Types.First(t => t.Name == "DontCopyAttribute");
+        var ctor = type.Methods.First(m => m.Name == ".ctor");
+        return new CustomAttribute(ctor);
+    }
+    
     public static TypeReference ResolveType(string assemblyName, Version version, string targetSignature, Module relevantModule)
     {
         var separatorIndex = targetSignature.LastIndexOf('.');

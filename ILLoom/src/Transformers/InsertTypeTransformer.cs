@@ -1,11 +1,13 @@
-﻿using ILWrapper;
+﻿using ILLoom.Transformers.TransformerTypes;
+using ILWrapper;
 using ILWrapper.Containers;
+using LoomModLib.Attributes;
 using Mono.Cecil;
 using Type = ILWrapper.Containers.Type;
 
 namespace ILLoom.Transformers;
 
-public class TypeInserter : ITransformer
+public class InsertTypeTransformer : ITransformer
 {
     private readonly Type _type;
     private readonly Assembly _assembly;
@@ -15,7 +17,7 @@ public class TypeInserter : ITransformer
 
     public string Name => $"{_type.FullName} as {_signature}";
 
-    public TypeInserter(Type type, Assembly assembly, string signature)
+    public InsertTypeTransformer(Type type, Assembly assembly, string signature)
     {
         _type = type;
         _assembly = assembly;
@@ -74,6 +76,7 @@ public class TypeInserter : ITransformer
         
         // remap the name of the type to insert and add it to the nested types
         var endType = _type.Clone(new ParentInfo(_assembly.MainModule){Remapper = Program.Remapper});
+        endType.CustomAttributes.RemoveAll(a => a.Type.Is<DontCopyAttribute>());
         endType.Name = _path[^1];
         endType.DeclaringType = null;
         nestedTypes[^1] = endType;

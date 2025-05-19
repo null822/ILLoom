@@ -13,22 +13,20 @@ public interface IMember<out TSelf, TBase> where TSelf : IMember<TSelf, TBase>
     internal static abstract TypeConvert<TBase, TSelf> FromBase { get; }
     internal static readonly TypeConvert<TSelf, TBase> ToBase = instance => instance.Base;
     
-    // public string Signature { get; }
     public string FullName { get; }
-
+    
     public ParentInfo Info => new();
     
     internal static TSelf Create(TBase? @base) => @base == null ? default! : TSelf.FromBase(@base);
     
     public TSelf Clone(ParentInfo info);
-
 }
 
 public interface IMember
 {
     public IMemberSet<CustomAttribute> CustomAttributes { get; }
     public MemberReference MemberBase { get; }
-
+    
     public static IMember FromBaseRef(MemberReference baseReference)
     {
         return baseReference switch

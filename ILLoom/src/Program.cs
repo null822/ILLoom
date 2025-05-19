@@ -11,11 +11,16 @@ namespace ILLoom;
 
 public static class Program
 {
+    public static Module TargetModule => _targetAssembly.MainModule;
+    public static readonly Remap<MemberReference> Remapper = Remap;
+    
+    public static readonly AssemblyResolver AssemblyResolver = new();
+    public static readonly MetadataResolver MetadataResolver = new(AssemblyResolver);
+    
     private static readonly string RootDirectory = Directory.GetCurrentDirectory();
     private static string _targetPath = "";
     
     private static Mod[] _mods = [];
-    private static string[] _modIds = [];
     
     /// <summary>
     /// A <see cref="Dictionary{TKey,TValue}"/> remapping <see cref="MemberReference"/>s of members with the
@@ -24,11 +29,7 @@ public static class Program
     private static readonly Dictionary<string, MemberReference> HoistRemappings = [];
     
     private static Assembly _targetAssembly = null!;
-    public static Module TargetModule => _targetAssembly.MainModule;
-    public static readonly Remap<MemberReference> Remapper = Remap;
     
-    public static readonly AssemblyResolver AssemblyResolver = new();
-    public static readonly MetadataResolver MetadataResolver = new(AssemblyResolver);
     
     private static readonly ReaderParameters ReaderParameters = new()
     {
@@ -77,7 +78,6 @@ public static class Program
     {
         var modFiles = Directory.GetFiles($"{RootDirectory}/mods");
         var mods = new List<Mod>(modFiles.Length);
-        var modIds = new List<string>(modFiles.Length);
         foreach (var modFile in modFiles)
         {
             var assembly = Assembly.ReadAssembly(modFile, ReaderParameters);
@@ -87,14 +87,11 @@ public static class Program
             foreach (var module in assembly.Modules)
             {
                 var mod = new Mod(module, asm);
-                modIds.Add(mod.Config.Id);
                 mods.Add(mod);
             }
         }
         _mods = mods.ToArray();
-        _modIds = modIds.ToArray();
         mods.Clear();
-        modIds.Clear();
     }
     
     private static void ApplyMods()
@@ -115,15 +112,6 @@ public static class Program
     
     private static void BuildAssembly()
     {
-        Console.WriteLine("Hoist Remappings: ");
-        Console.ForegroundColor = ConsoleColor.DarkGray;
-        foreach (var remapping in HoistRemappings)
-        {
-            Console.WriteLine($"{remapping.Key} => {remapping.Value.FullName}");
-        }
-        Console.ForegroundColor = ConsoleColor.Gray;
-
-
         Directory.CreateDirectory("out");
         _targetAssembly.Write("out/patched.dll");
         
@@ -136,6 +124,8 @@ public static class Program
         _patchedAssembly = System.Reflection.Assembly.Load(assemblyStream.ToArray());
         assemblyStream.Dispose();
         _targetAssembly.Dispose();
+        
+        Console.WriteLine("Assembly Built Successfully");
     }
 
     private static void LaunchAssembly()
@@ -206,12 +196,16 @@ public static class Program
         Console.ForegroundColor = ConsoleColor.DarkMagenta;
         Console.WriteLine("  - Copy Types");
         Console.ForegroundColor = ConsoleColor.Gray;
+        
+        var newNamespace = TargetModule.Entrypoint?.DeclaringType?.GetRootType().Namespace;
         foreach (var mod in _mods)
         {
             foreach (var type in mod.CopyTypes)
             {
                 Console.WriteLine($"    - {type.FullName}");
                 var clone = type.Clone(TargetModule.Info);
+                if (newNamespace != null)
+                    clone.Namespace = newNamespace;
                 TargetModule.Types.Add(clone);
             }
         }
@@ -238,9 +232,14 @@ public static class Program
         Console.WriteLine("  - Inject into Enums");
         Console.ForegroundColor = ConsoleColor.Gray;
         
-        Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.WriteLine("      - TODO");
-        Console.ForegroundColor = ConsoleColor.Gray;
+        foreach (var mod in _mods)
+        {
+            foreach (var injector in mod.EnumInjectors)
+            {
+                Console.WriteLine($"    - {injector.Name}");
+                injector.Apply();
+            }
+        }
     }
     
     private static void ApplyInjectors()
@@ -334,13 +333,13 @@ public static class Program
     /// List version of <see cref="AddHoistRemap(Mono.Cecil.MemberReference,Mono.Cecil.MemberReference)"/>
     /// </summary>
     /// <param name="mappings">a list of mappings to add</param>
-    public static void AddHoistRemappings(List<(string, MemberReference)> mappings)
+    public static void AddHoistRemappings(List<HoistRemapping> mappings)
     {
         foreach (var mapping in mappings)
         {
-            if (!HoistRemappings.TryAdd(mapping.Item1, mapping.Item2))
+            if (!HoistRemappings.TryAdd(mapping.From, mapping.To))
             {
-                Console.WriteLine($"Failed to add Hoist remapping: {mapping.Item1} => {mapping.Item2.FullName}");
+                Console.WriteLine($"Failed to add Hoist remapping: {mapping.From} => {mapping.To.FullName}");
             }
         }
     }
@@ -427,5 +426,6 @@ public static class Program
         Running,
         Disposing
     }
-
 }
+
+public record HoistRemapping(string From, MemberReference To);

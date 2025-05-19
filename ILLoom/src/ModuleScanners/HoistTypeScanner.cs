@@ -1,69 +1,30 @@
-﻿using ILWrapper.Containers;
+﻿using ILLoom.ModuleScanners.ScannerTypes;
 using LoomModLib.Attributes;
-using Mono.Cecil;
+using CustomAttribute = ILWrapper.SubMembers.CustomAttribute;
 using Type = ILWrapper.Containers.Type;
 
 namespace ILLoom.ModuleScanners;
 
-public class HoistTypeScanner : IModuleScanner<List<(string, MemberReference)>>
+public class HoistTypeScanner : ModuleClassScanner<HoistRemapping>
 {
-    private readonly List<(string, MemberReference)> _hoists = [];
-    
-    public List<(string, MemberReference)> Scan(Module module)
+    protected override HoistRemapping ReadAttribute(CustomAttribute attribute, Type owner)
     {
-        for (var i = 0; i < module.Types.Count; i++)
-        {
-            var type = module.Types[i];
-            if (type.FullName == "<Module>") continue;
-            if (ScanType(type, module))
-            {
-                type.NestedTypes.RemoveAt(i);
-                i--;
-            }
-        }
-
-        return _hoists;
+        var target = Util.CreateTypeReference(
+            (string)attribute[0],
+            Version.Parse((string)attribute[1]),
+            (string)attribute[2]);
+            
+        return new HoistRemapping(owner.FullName, target);
     }
     
-    private bool ScanType(Type type, Module module)
+    protected override bool IncludeAttribute(CustomAttribute attribute)
     {
-        var remove = false;
-
-        var hoistTypeAttribs = type.CustomAttributes
-            .Where(a =>
-            {
-                var t = a.Type;
-                
-                return t.Is<HoistTypeAttribute>()
-                     || t.Is<InsertTypeAttribute>(); // TODO: enable once InsertTypeAttribute is fully implemented
-            });
-        
-        foreach (var attrib in hoistTypeAttribs)
-        {
-            var target = Util.CreateTypeReference(
-                (string)attrib[0],
-                Version.Parse((string)attrib[1]),
-                (string)attrib[2]);
-            
-            _hoists.Add((type.Base.FullName, target));
-            
-            // remove all explicitly [Hoist]ed types
-            if (attrib.Type.Is<HoistTypeAttribute>())
-                remove = true;
-        }
-        
-        
-        // scan all nested types
-        for (var i = 0; i < type.NestedTypes.Count; i++)
-        {
-            var nestedType = type.NestedTypes[i];
-            if (ScanType(nestedType, module))
-            {
-                type.NestedTypes.RemoveAt(i);
-                i--;
-            }
-        }
-
-        return remove;
+        var attribType = attribute.Type;
+        return attribType.Is<HoistTypeAttribute>() || attribType.Is<InsertTypeAttribute>();
+    }
+    
+    protected override bool RemoveTransformer(CustomAttribute attribute)
+    {
+        return attribute.Type.Is<HoistTypeAttribute>();
     }
 }

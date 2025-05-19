@@ -84,6 +84,11 @@ public class Type : IMember<Type, TypeReference>, IMember, IMemberContainer
     {
         return typeof(T).FullName == FullName;
     }
+
+    public bool Implements<T>()
+    {
+        return Interfaces.Any(interf => interf.Type.Is<T>());
+    }
     
     public bool IsEmpty(bool ignoreConstructors = false)
     {
@@ -94,6 +99,15 @@ public class Type : IMember<Type, TypeReference>, IMember, IMemberContainer
                Properties.Count == 0 &&
                Events.Count == 0 &&
                NestedTypes.Count == 0;
+    }
+
+    public Type GetRootType()
+    {
+        var t = this;
+        while (t.DeclaringType != null)
+            t = t.DeclaringType;
+
+        return t;
     }
     
     public override string ToString()

@@ -48,7 +48,7 @@ public class Field : IMember<Field, FieldReference>, IMember
     public object? Constant { get => Base.Resolve().Constant; set => Base.Resolve().Constant = value; }
     public byte[]? InitialValue { get => Base.Resolve().InitialValue; set => Base.Resolve().InitialValue = value; }
     public int Offset { get => Base.Resolve().Offset; set => Base.Resolve().Offset = value; }
-    public Type? DeclaringType { get => IMember<Type, TypeReference>.Create(Base.DeclaringType); set => Base.DeclaringType = value?.Base; }
+    public Type? DeclaringType { get => IMember<Type, TypeReference>.Create(Base.DeclaringType); set => Base.DeclaringType = value?.Base.Resolve(); } // type is resolved due to a crash when reading FieldDefinition.DeclaringType when it is a TypeReference
     public FieldAttributes Attributes { get => Base.Resolve().Attributes; set => Base.Resolve().Attributes = value; }
     public MetadataToken MetadataToken { get => Base.MetadataToken; set => Base.MetadataToken = value; }
     public MarshalInfo MarshalInfo { get => Base.Resolve().MarshalInfo; set => Base.Resolve().MarshalInfo = value; }

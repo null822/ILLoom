@@ -1,5 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Text;
+﻿using System.Text;
 using ILWrapper.Containers;
 using ILWrapper.Members;
 using ILWrapper.SubMembers;

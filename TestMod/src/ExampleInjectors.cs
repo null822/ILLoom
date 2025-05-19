@@ -18,6 +18,7 @@ public class ExampleInjectors
     // inject into the method group Program.Main (in class Main)
     [Inject(nameof(Program.Main), typeof(Program))]
     // the accessibility and attributes (abstract, virtual, static, etc.) do not have to match, but the parameters must
+    // TODO: inject location
     public void Test /* injector name */ (string[] args /* inject specifically into Program.Main(string[]) */)
     {
         Console.WriteLine("Injected Hello from test mod :D");
@@ -100,8 +101,10 @@ public class ExampleInjectors
             // doing this does NOT hoist the enum automatically
             public enum BasementTypeInjector
             {
-                ServerRoom = 4, // defines `(BasementType)4` as ServerRoom
-                MethLab = 3 // adds another definition to BlueCrystalLab (i.e. `(BasementType)3`), since a definition already exists
+                Cellar, // adds a new definition called `Cellar`
+                ServerRoom = 3, // adds a new definition called `ServerRoom`
+                // Note that `ServerRoom` it will not be equal to 3 since (BasementType)3 is already defined as BlueCrystalLab
+                // the values in EnumInjectors are therefore unreliable, since they can change if/when other mods are loaded
             }
         }
     }

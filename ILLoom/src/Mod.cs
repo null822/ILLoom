@@ -1,8 +1,11 @@
 ﻿using ILLoom.ModuleScanners;
 using ILLoom.Transformers;
+using ILLoom.Transformers.TransformerTypes;
 using ILWrapper;
 using ILWrapper.Containers;
+using ILWrapper.SubMembers;
 using LoomModLib;
+using LoomModLib.Attributes;
 using Type = ILWrapper.Containers.Type;
 
 namespace ILLoom;
@@ -19,8 +22,9 @@ public class Mod
     /// </summary>
     public readonly IModConfig Config;
     
-    public readonly List<TypeInserter> TypeInserters = [];
-    public readonly List<Inserter> Inserters = [];
+    public readonly List<InsertTypeTransformer> TypeInserters = [];
+    public readonly List<InsertTransformer> Inserters = [];
+    public readonly List<InjectEnumTransformer> EnumInjectors = [];
     public readonly List<IInjector> Injectors = [];
     
     
@@ -37,8 +41,8 @@ public class Mod
         // add the module to the assembly resolver
         Program.AssemblyResolver.RegisterAssembly(_module.Assembly);
 
-        // scan the module for the mod config
-        Config = new ConfigScanner(assembly).Scan(_module);
+        // scan the module for the mod config, taking the first result
+        Config = new ConfigScanner(assembly).Scan(_module)[0];
         
         Console.WriteLine($" -> Loaded Mod {Config.Id}");
     }
@@ -65,8 +69,7 @@ public class Mod
     
     public void ScanEnumInjectors()
     {
-        //TODO: implement injectors
-        new InjectEnumScanner().Scan(_module);
+        EnumInjectors.AddRange(new InjectEnumScanner().Scan(_module));
     }
     
     public void ScanInjectors()
@@ -74,15 +77,44 @@ public class Mod
         //TODO: implement injectors
         new InjectScanner().Scan(_module);
     }
+
+    private static readonly Func<CustomAttribute, bool> IsDontCopy = a => a.Type.Is<DontCopyAttribute>();
+    private static readonly Func<IMember, bool> HasDontCopy = m => m.CustomAttributes.Any(IsDontCopy);
     
     public void LoadCopyTypes()
     {
         // all remaining types will be copied into the target application
         foreach (var type in _module.Types)
         {
-            if (type.IsEmpty(true)) continue;
-            CopyTypes.Add(type);
+            
+            if (type.CustomAttributes.Any(IsDontCopy))
+                continue;
+
+            var clone = type.Clone(new ParentInfo(Program.TargetModule));
+            RemoveDontCopyMembers(clone);
+            
+            if (clone.IsEmpty(true)) 
+                continue;
+            
+            CopyTypes.Add(clone);
         }
     }
     
+    private static void RemoveDontCopyMembers(Type type)
+    {
+        var nestedTypes = type.NestedTypes;
+        
+        // remove all members with the [DontCopy] attribute
+        type.Fields.RemoveAll(HasDontCopy);
+        type.Methods.RemoveAll(HasDontCopy);
+        type.Properties.RemoveAll(HasDontCopy);
+        type.Events.RemoveAll(HasDontCopy);
+        type.NestedTypes.RemoveAll(HasDontCopy);
+        
+        // recursively scan the (remaining) nested types
+        foreach (var subType in nestedTypes)
+        {
+            RemoveDontCopyMembers(subType);
+        }
+    }
 }

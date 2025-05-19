@@ -1,4 +1,4 @@
-﻿namespace ILLoom;
+﻿namespace ILLoom.Transformers.TransformerTypes;
 
 public interface IInjector
 {

@@ -1,64 +1,27 @@
-﻿using ILWrapper;
-using ILWrapper.Containers;
-using ILWrapper.Members;
-using ILWrapper.MemberSet;
+﻿using ILLoom.ModuleScanners.ScannerTypes;
+using ILLoom.Transformers;
 using LoomModLib.Attributes;
 using Mono.Cecil;
+using CustomAttribute = ILWrapper.SubMembers.CustomAttribute;
 using Type = ILWrapper.Containers.Type;
 
 namespace ILLoom.ModuleScanners;
 
-public class InjectEnumScanner : IModuleScanner<object?>
+public class InjectEnumScanner : ModuleClassScanner<InjectEnumTransformer>
 {
-    public object? Scan(Module module)
+    protected override InjectEnumTransformer ReadAttribute(CustomAttribute attribute, Type owner)
     {
-        foreach (var type in module.Types)
-        {
-            if (type.FullName == "<Module>") continue;
-            ScanMembers(type);
-        }
-        
-        return null;
+        var target = new Type((TypeReference)Program.Remap((TypeReference)attribute[0]));
+        return new InjectEnumTransformer(owner, target);
     }
-    
-    private void ScanMembers(Type type)
+
+    protected override bool IncludeAttribute(CustomAttribute attribute)
     {
-        // sort members
-        Sort(CollectionConvert<IMember, Method>.Of<IMember, Method>(type.Methods));
-        Sort(CollectionConvert<IMember, Field>.Of<IMember, Field>(type.Fields));
-        Sort(CollectionConvert<IMember, Property>.Of<IMember, Property>(type.Properties));
-        Sort(CollectionConvert<IMember, Event>.Of<IMember, Event>(type.Events));
-        Sort(CollectionConvert<IMember, Type>.Of<IMember, Type>(type.NestedTypes));
+        return attribute.Type.Is<InjectEnumAttribute>();
     }
-    
-    private void Sort(IList<IMember> members)
+
+    protected override bool RemoveTransformer(CustomAttribute attribute)
     {
-        for (var i = 0; i < members.Count; i++)
-        {
-            var remove = false;
-            var member = members[i];
-
-            var attribs = member.CustomAttributes
-                .Where(a => a.Type.Is<InjectEnumAttribute>());
-            
-            foreach (var attrib in attribs)
-            {
-                var targetMember = (string)attrib[0];
-                var targetType = Program.Remap((TypeReference)attrib[1]);
-                
-                // TODO: add to injectors
-                
-                remove = true;
-            }
-
-            if (remove)
-            {
-                // this removes the member from the Module since the IList supplied is a wrapper
-                members.RemoveAt(i);
-                i--;
-            }
-
-        }
-
+        return true;
     }
 }

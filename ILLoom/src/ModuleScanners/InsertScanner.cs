@@ -12,8 +12,8 @@ public class InsertScanner : ModuleMemberScanner<InsertTransformer>
 {
     protected override InsertTransformer ReadAttribute(CustomAttribute attribute, IMember owner)
     {
-        var newName = (string)attribute[0];
-        var targetType = new Type(((TypeReference)Program.Remap((TypeReference)attribute[1])).Resolve());
+        var newName = (string)attribute[0]!;
+        var targetType = new Type(((TypeReference)Program.Remap((TypeReference)attribute[1]!)).Resolve());
         
         return new InsertTransformer(targetType, owner, newName);
     }

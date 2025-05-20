@@ -12,9 +12,9 @@ public class InsertTypeScanner : ModuleClassScanner<InsertTypeTransformer>
 {
     protected override InsertTypeTransformer ReadAttribute(CustomAttribute attribute, Type owner)
     {
-        var assemblyName = (string)attribute[0];
-        var assemblyVersion = Version.Parse((string)attribute[1]);
-        var targetSignature = (string)attribute[2];
+        var assemblyName = (string)attribute[0]!;
+        var assemblyVersion = Version.Parse((string)attribute[1]!);
+        var targetSignature = (string)attribute[2]!;
             
         var targetAssembly = Program.AssemblyResolver.Resolve(new AssemblyNameReference(assemblyName, assemblyVersion));
         

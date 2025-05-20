@@ -1,15 +1,15 @@
 ﻿namespace LoomModLib.Attributes;
 
-[AttributeUsage(AttributeTargets.Method 
+[AttributeUsage(AttributeTargets.Method
                 | AttributeTargets.Field
                 | AttributeTargets.Property, AllowMultiple = true)]
-public class InjectAttribute : Attribute
-{
-    public InjectAttribute(string targetMember, Type targetType) { }
-}
+public class InjectAttribute(string targetMember, Type targetType) : Attribute;
 
-[AttributeUsage(AttributeTargets.Enum, AllowMultiple = true)]
-public class InjectEnumAttribute : Attribute
-{
-    public InjectEnumAttribute(Type targetEnum) { }
-}
+
+
+public interface IInjectLocation;
+
+[AttributeUsage(AttributeTargets.Method
+                | AttributeTargets.Field
+                | AttributeTargets.Property)]
+public class InjectStart : Attribute, IInjectLocation;

@@ -9,10 +9,6 @@
                 ^ AttributeTargets.ReturnValue
                 ^ AttributeTargets.Parameter
                 ^ AttributeTargets.GenericParameter, AllowMultiple = true)]
-public class InjectorDependencyAttribute : Attribute
-{
-    public InjectorDependencyAttribute(string injector, string injectorClass = "<self>", string modId = "<self>",
-        bool invert = false,
-        bool optional = false
-        ) { }
-}
+public class InjectorDependencyAttribute(string injector, string injectorClass = "<self>", string modId = "<self>", 
+    bool invert = false, bool optional = false) : Attribute;
+

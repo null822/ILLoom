@@ -39,7 +39,7 @@ public class CustomAttribute : IMember<CustomAttribute, Mono.Cecil.CustomAttribu
     public readonly IMemberSet<CustomAttributeNamedArg> Fields;
     public readonly IMemberSet<CustomAttributeArg> ConstructorArguments;
 
-    public object this[int i] => ConstructorArguments[i].Value;
+    public object? this[int i] => ConstructorArguments[i].Value;
     
     public CustomAttribute Clone(ParentInfo info)
     {

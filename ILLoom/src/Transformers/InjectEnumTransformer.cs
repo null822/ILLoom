@@ -30,17 +30,22 @@ public class InjectEnumTransformer(Type injector, Type target) : ITransformer
             
             var fieldClone = field.Clone(info);
             fieldClone.CustomAttributes.RemoveAll(a => a.Type.Is<DontCopyAttribute>());
+            fieldClone.CustomAttributes.RemoveAll(a => a.Type.Is<ForceEnumValueAttribute>());
             fieldClone.FieldType = target;
             
-            // find next available constant value
-            for (var i = (int)fieldClone.Constant!;; i++)
+            // find next available constant value, unless we should force the value
+            if (!field.CustomAttributes.Any(a => a.Type.Is<ForceEnumValueAttribute>()))
             {
-                if (target.Fields.Any(f => f.Name != "value__" && (int)f.Constant! == i))
-                    continue;
-                
-                fieldClone.Constant = i;
-                break;
+                for (var i = (int)fieldClone.Constant!;; i++)
+                {
+                    if (target.Fields.Any(f => f.Name != "value__" && (int)(f.Constant ?? -1) == i))
+                        continue;
+                    
+                    fieldClone.Constant = i;
+                    break;
+                }
             }
+            
             target.Fields.Add(fieldClone);
         }
     }

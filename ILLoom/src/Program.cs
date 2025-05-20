@@ -112,6 +112,11 @@ public static class Program
     
     private static void BuildAssembly()
     {
+        foreach (var remapping in HoistRemappings)
+        {
+            Console.WriteLine($"{remapping.Key} => {remapping.Value.FullName}");
+        }
+        
         Directory.CreateDirectory("out");
         _targetAssembly.Write("out/patched.dll");
         

@@ -20,7 +20,7 @@ public class CustomAttributeArg : IMember<CustomAttributeArg, CustomAttributeArg
     public string FullName => $"[({Type.FullName} _ = {Value})]";
     
     public Type Type => new(Base.Type);
-    public object Value => Base.Value;
+    public object? Value => Base.Value;
 
     public CustomAttributeArg Clone(ParentInfo info)
     {

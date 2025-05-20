@@ -12,9 +12,22 @@ public class HoistScanner : ModuleMemberScanner<HoistRemapping>
 {
     protected override HoistRemapping ReadAttribute(CustomAttribute attribute, IMember owner)
     {
-        var targetMember = (string)attribute[0];
-        var targetType = new Type((TypeReference)Program.Remap((TypeReference)attribute[1]));
-        
+        var targetMember = (string)attribute[0]!;
+        var type = attribute[1];
+        Type targetType;
+        if (type == null)
+        {
+            var ownerType = owner.MemberBase.DeclaringType;
+            var remappedOwnerType = Program.Remap(ownerType);
+            if (ownerType.FullName == remappedOwnerType.FullName)
+                throw new InvalidHoistAttribute(owner);
+            targetType = new Type((TypeReference)remappedOwnerType);
+        }
+        else
+        {
+            targetType = new Type((TypeReference)Program.Remap((TypeReference)type));
+        }
+
         var target = owner switch
         {
             Method method => (MemberReference)
@@ -45,3 +58,6 @@ public class HoistScanner : ModuleMemberScanner<HoistRemapping>
         return attribute.Type.Is<HoistAttribute>();
     }
 }
+
+public class InvalidHoistAttribute(IMember owner)
+    : Exception($"[Hoist] attribute on '{owner.MemberBase.FullName}' without `targetType` parameter must be in a class with a [HoistType] attribute");

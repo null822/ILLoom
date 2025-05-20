@@ -25,7 +25,7 @@ public class Game
     {
         private int _offset;
         private const int StartValue = 42;
-        private readonly Basement _basement = new(Basement.BasementType.ServerRoom);
+        private readonly Basement _basement = new(Basement.BasementType.Storage);
         
         internal int GetValue()
         {
@@ -65,8 +65,7 @@ public class Game
             {
                 Empty = 0,
                 Storage = 1,
-                ServerRoom = 2,
-                BlueCrystalLab = 3
+                BlueCrystalLab = 2
             }
         }
     }

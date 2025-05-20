@@ -24,7 +24,7 @@ public class ExampleInjectors
         Console.WriteLine("Injected Hello from test mod :D");
         Console.WriteLine($"Intercepted args[0] = {args[0]}");
         Console.WriteLine(Test2(69));
-        var fort = new ProgramFortress();
+        var fort = new FortressHoist();
         Console.WriteLine($"Fortress Value = {fort.GetValue()}");
     }
     
@@ -62,7 +62,7 @@ public class ExampleInjectors
     
     // fields can have their default value overridden
     // in this case, a constant field is being overridden
-    [Inject("StartValue", typeof(ProgramFortress))]
+    [Inject("StartValue", typeof(FortressHoist))]
     // note that, just like Insertions, Injections are also automatically hoisted
     private int _fortInject = 32;
     
@@ -72,7 +72,7 @@ public class ExampleInjectors
     // its members will be redirected to Program.Fortress and its members instead
     // nested types can be hoisted too
     [HoistType("Game", "1.0.0.0", "Game.Game/Fortress")]
-    private class ProgramFortress
+    private class FortressHoist
     {
         // hoist the GetValue method in Program.Fortress
         [Hoist("GetValue")]
@@ -89,7 +89,7 @@ public class ExampleInjectors
         
         // hoisting classes can contain more hoisted types
         [HoistType("Game", "1.0.0.0", "Game.Game/Fortress/Basement")]
-        private class ProgramFortressBasement
+        private class BasementHoist
         {
             // enums, structs, and interfaces can also be hoisted
             [HoistType("Game", "1.0.0.0", "Game.Game/Fortress/Basement/BasementType")]
@@ -102,9 +102,11 @@ public class ExampleInjectors
             public enum BasementTypeInjector
             {
                 Cellar, // adds a new definition called `Cellar`
-                ServerRoom = 3, // adds a new definition called `ServerRoom`
-                // Note that `ServerRoom` it will not be equal to 3 since (BasementType)3 is already defined as BlueCrystalLab
-                // the values in EnumInjectors are therefore unreliable, since they can change if/when other mods are loaded
+                Storage = 12, // overrides the value of BasementType.Storage to be 12 instead of 1
+                ServerRoom = 1, // adds a new definition called `ServerRoom`
+                // Note that `ServerRoom` it will not be equal to 1 since `(BasementType)1` is already defined as `Storage`
+                [ForceEnumValue]
+                MethLab = 2 // adds a new definition called `MethLab`, forcing the value to be `2` just like the exiting `BlueCrystalLab`
             }
         }
     }

@@ -44,38 +44,55 @@ public struct ParentInfo
     public MethodBody? MethodBody { get; set; }
     
     public ParentInfo() { }
-    public ParentInfo(Assembly? assembly = null)
+
+    public ParentInfo With(Assembly? assembly)
     {
         Assembly = assembly;
+        return this;
     }
-    public ParentInfo(Module? module = null) : this(module?.Assembly)
+
+    public ParentInfo With(Module? module, bool updateOthers = true)
     {
         Module = module;
+        if (updateOthers && module != null) With(module.Assembly);
+        return this;
     }
-    public ParentInfo(Type? type = null) : this(type?.Module)
+    public ParentInfo With(Type? type, bool updateOthers = true)
     {
         Type = type;
+        if (updateOthers && type != null) With(type.Module);
+        return this;
     }
-    
-    public ParentInfo(Method? method = null) : this(method?.DeclaringType)
+
+    public ParentInfo With(Method? method, bool updateOthers = true)
     {
         Method = method;
+        if (updateOthers && method != null) With(method.DeclaringType);
+        return this;
     }
-    public ParentInfo(MethodBody? methodBody = null) : this(methodBody?.Method)
-    {
-        MethodBody = methodBody;
+    public ParentInfo With(MethodBody? body, bool updateOthers = true)
+    { 
+        MethodBody = body;
+        if (updateOthers && body != null) With(body.Method);
+
+        With(body?.Method); return this;
     }
-    
-    public ParentInfo(Field? field = null) : this(field?.DeclaringType)
+
+    public ParentInfo With(Field? field, bool updateOthers = true)
     {
         Field = field;
+        if (updateOthers && field != null) With(field.DeclaringType);
+
+        return this;
     }
-    public ParentInfo(Property? property = null) : this(property?.DeclaringType)
+
+    public ParentInfo With(Property? property, bool updateOthers = true)
     {
         Property = property;
+        if (updateOthers && property != null) With(property.DeclaringType);
+        return this;
     }
     
-
     public override string ToString()
     {
         return $"asm:{Assembly?.ToString() ?? "null"}" +

@@ -12,10 +12,12 @@ public class HoistScanner : ModuleMemberScanner<HoistRemapping>
 {
     protected override HoistRemapping ReadAttribute(CustomAttribute attribute, IMember owner)
     {
-        var targetMember = (string)attribute[0]!;
-        var type = attribute[1];
+        var originalName = owner.MemberBase.FullName;
+        
+        var targetMember = attribute.Get<string>(0);
+        var type = attribute.Get<TypeReference>(1);
         Type targetType;
-        if (type == null)
+        if (type == null!)
         {
             var ownerType = owner.MemberBase.DeclaringType;
             var remappedOwnerType = Program.Remap(ownerType);
@@ -25,24 +27,30 @@ public class HoistScanner : ModuleMemberScanner<HoistRemapping>
         }
         else
         {
-            targetType = new Type((TypeReference)Program.Remap((TypeReference)type));
+            targetType = new Type((TypeReference)Program.Remap(type));
         }
-
-        var target = owner switch
+        
+        MemberReference target = owner switch
         {
-            Method method => (MemberReference)
-                targetType.Methods
-                    .Where(m => m.Name == targetMember)
-                    .First(m => m.Parameters.Matches(method.Parameters))
-                    .Base,
-            Field => targetType.Fields.First(m => m.Name == targetMember).Base,
-            Property => targetType.Properties.First(m => m.Name == targetMember).Base,
-            Event => targetType.Events.First(m => m.Name == targetMember).Base,
-            Type => targetType.NestedTypes.First(m => m.Name == targetMember).Base,
+            Method m => CreateMethodReference(targetMember, m, targetType),
+            Field m => new FieldReference(targetMember, m.FieldType.Base, targetType.Base),
+            Property m => new PropertyDefinition(targetMember, m.Attributes, targetType.Base),
+            Event m => new EventDefinition(targetMember, m.Attributes, targetType.Base),
             _ => throw new Exception($"Unexpected member type: {owner.GetType()}")
         };
-                
-        return new HoistRemapping(owner.MemberBase.FullName, target);
+        
+        return new HoistRemapping(originalName, target);
+    }
+
+    private static MethodReference CreateMethodReference(string name, Method m, Type targetType)
+    {
+        var methodRef = new MethodReference(name, m.ReturnType.Base, targetType.Base);
+        methodRef.Parameters.Clear();
+        foreach (var p in m.Parameters)
+        {
+            methodRef.Parameters.Add(p.Base);
+        }
+        return methodRef;
     }
     
     protected override bool IncludeAttribute(CustomAttribute attribute)
@@ -50,7 +58,8 @@ public class HoistScanner : ModuleMemberScanner<HoistRemapping>
         var type = attribute.Type;
                     
         return type.Is<HoistAttribute>() 
-               || type.Is<InjectAttribute>();
+               || type.Is<InjectAttribute>()
+               || type.Is<InsertAttribute>();
     }
     
     protected override bool RemoveTransformer(CustomAttribute attribute)

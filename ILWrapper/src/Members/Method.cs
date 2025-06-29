@@ -26,7 +26,7 @@ public class Method : IMember<Method, MethodReference>, IMember
         CustomAttributes = new MemberSet<CustomAttribute, Mono.Cecil.CustomAttribute>(Base.Resolve().CustomAttributes);
         Overrides = new MemberSet<Method, MethodReference>(Base.Resolve().Overrides);
 
-        Info = new ParentInfo(this);
+        Info = new ParentInfo().With(this);
     }
     
     public Method(string name, MethodAttributes attributes, Type returnType) : this(new MethodDefinition(name, attributes, returnType.Base)) {}

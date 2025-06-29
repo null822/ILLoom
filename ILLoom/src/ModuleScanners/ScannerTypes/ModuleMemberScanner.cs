@@ -10,8 +10,22 @@ public abstract class ModuleMemberScanner<T> : IModuleScanner<T>
 {
     private readonly List<T> _results = [];
     
+    /// <summary>
+    /// Reads a <see cref="CustomAttribute"/> and returns a new <typeparamref name="T"/>
+    /// </summary>
+    /// <param name="attribute">the attribute to scan</param>
+    /// <param name="owner">the <see cref="IMember"/> that has the attribute</param>
     protected abstract T ReadAttribute(CustomAttribute attribute, IMember owner);
+    /// <summary>
+    /// Returns whether to read an attribute (true), or ignore it (false)
+    /// </summary>
+    /// <param name="attribute">the attribute</param>
     protected abstract bool IncludeAttribute(CustomAttribute attribute);
+    /// <summary>
+    /// Returns whether to replace this attribute with a [DontCopy] attribute, preventing the member from being copied
+    /// into the target executable
+    /// </summary>
+    /// <param name="attribute">the attribute</param>
     protected abstract bool RemoveTransformer(CustomAttribute attribute);
     
     public List<T> Scan(Module module)

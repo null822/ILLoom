@@ -21,12 +21,14 @@ public class Variable : IMember<Variable, VariableDefinition>, ISubMember
     
     public bool IsPinned => Base.IsPinned;
     public int Index => Base.Index;
-    public Type Type { get => IMember<Type, TypeReference>.Create(Base.VariableType); set => Base.VariableType = value?.Base; }
+    public Type Type { get => new(Base.VariableType); set => Base.VariableType = value.Base; }
     
     public Variable Clone(ParentInfo info)
     {
-        var variable = new Variable(info.Remap(Type));
-        // TODO: missing index
+        var variable = new Variable(info.Module == null 
+            ? Type 
+            : info.Module!.TryImportReference(info.Remap(Type), out _));
+        
         return variable;
     }
 

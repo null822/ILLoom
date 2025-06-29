@@ -2,6 +2,7 @@
 using ILWrapper;
 using ILWrapper.Members;
 using LoomModLib.Attributes;
+using Mono.Cecil;
 using Type = ILWrapper.Containers.Type;
 
 namespace ILLoom.Transformers;

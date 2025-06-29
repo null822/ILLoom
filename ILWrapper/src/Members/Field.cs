@@ -19,7 +19,7 @@ public class Field : IMember<Field, FieldReference>, IMember
         Base = @base;
         CustomAttributes = new MemberSet<SubMembers.CustomAttribute, CustomAttribute>(Base.Resolve().CustomAttributes);
         
-        Info = new ParentInfo(this);
+        Info = new ParentInfo().With(this);
     }
     
     public Field(string name, FieldAttributes attributes, Type fieldType) : this(new FieldDefinition(name, attributes, fieldType.Base)) {}

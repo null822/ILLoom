@@ -21,13 +21,13 @@ public class Game
         throw new Exception("test exception 123");
     }
     
-    private sealed class Fortress
+    public sealed class Fortress
     {
         private int _offset;
         private const int StartValue = 42;
         private readonly Basement _basement = new(Basement.BasementType.Storage);
         
-        internal int GetValue()
+        public int GetValue()
         {
             return StartValue + _offset;
         }

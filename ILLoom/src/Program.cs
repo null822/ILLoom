@@ -2,6 +2,7 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using ILLoom.Transformers.TransformerTypes;
 using ILWrapper;
 using Mono.Cecil;
 using Assembly = ILWrapper.Containers.Assembly;
@@ -12,12 +13,13 @@ namespace ILLoom;
 public static class Program
 {
     public static Module TargetModule => _targetAssembly.MainModule;
+    public static ParentInfo TargetInfo { get; private set; }
     public static readonly Remap<MemberReference> Remapper = Remap;
     
     public static readonly AssemblyResolver AssemblyResolver = new();
     public static readonly MetadataResolver MetadataResolver = new(AssemblyResolver);
     
-    private static readonly string RootDirectory = Directory.GetCurrentDirectory();
+    private static readonly string RootDirectory = Directory.GetCurrentDirectory().Replace('\\', '/');
     private static string _targetPath = "";
     
     private static Mod[] _mods = [];
@@ -46,7 +48,7 @@ public static class Program
         
         Directory.CreateDirectory("mods");
         Directory.CreateDirectory("libs");
-        _targetPath = args[0];
+        _targetPath = args[0].Replace('\\', '/');
         
         AssemblyResolver.RegisterAssemblies(RuntimeEnvironment.GetRuntimeDirectory());
         AssemblyResolver.RegisterAssemblies($"{RootDirectory}/libs");
@@ -54,10 +56,12 @@ public static class Program
         _targetAssembly = Assembly.ReadAssembly(_targetPath, ReaderParameters);
         AssemblyResolver.RegisterAssembly(_targetAssembly);
         
-        TargetModule.Info = new ParentInfo(TargetModule)
+        TargetInfo = new ParentInfo
         {
+            Module = TargetModule,
             Remapper = Remapper
         };
+        TargetModule.Info = TargetInfo;
         
         // main script
         Util.Heading("Loading Mods");
@@ -78,8 +82,9 @@ public static class Program
     {
         var modFiles = Directory.GetFiles($"{RootDirectory}/mods");
         var mods = new List<Mod>(modFiles.Length);
-        foreach (var modFile in modFiles)
+        foreach (var modFileBs in modFiles)
         {
+            var modFile = modFileBs.Replace('\\', '/');
             var assembly = Assembly.ReadAssembly(modFile, ReaderParameters);
             var asm = System.Reflection.Assembly.LoadFile(modFile);
             
@@ -112,10 +117,13 @@ public static class Program
     
     private static void BuildAssembly()
     {
+        Console.WriteLine("Hoist Remappings: ");
+        Console.ForegroundColor = ConsoleColor.DarkGray;
         foreach (var remapping in HoistRemappings)
         {
-            Console.WriteLine($"{remapping.Key} => {remapping.Value.FullName}");
+            Console.WriteLine($"  {remapping.Key} => {remapping.Value.FullName}");
         }
+        Console.ForegroundColor = ConsoleColor.Gray;
         
         Directory.CreateDirectory("out");
         _targetAssembly.Write("out/patched.dll");
@@ -192,6 +200,7 @@ public static class Program
             {
                 Console.WriteLine($"    - {typeInserter.Name}");
                 typeInserter.Apply();
+                // AddHoistRemap(typeInserter.GetRemapping());
             }
         }
     }
@@ -208,7 +217,7 @@ public static class Program
             foreach (var type in mod.CopyTypes)
             {
                 Console.WriteLine($"    - {type.FullName}");
-                var clone = type.Clone(TargetModule.Info);
+                var clone = type.Clone(TargetInfo);
                 if (newNamespace != null)
                     clone.Namespace = newNamespace;
                 TargetModule.Types.Add(clone);
@@ -253,89 +262,78 @@ public static class Program
         Console.WriteLine("  - Inject into Method Bodies");
         Console.ForegroundColor = ConsoleColor.Gray;
         
-        Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.WriteLine("      - TODO");
-        Console.ForegroundColor = ConsoleColor.Gray;
-        
         foreach (var mod in _mods)
         {
             var injectors = mod.Injectors;
             
-            var prevInjectorApplyStates = new int[injectors.Count];
-            var injectorApplyStates = new int[injectors.Count];
+            var prevInjectorApplyStates = new InjectorApplyState[injectors.Count];
+            var injectorApplyStates = new InjectorApplyState[injectors.Count];
             
-            var completeCount = 0;
-            var injectorIndex = 0;
+            var i = 0;
             while (injectors.Count != 0)
             {
-                if (injectorIndex >= injectors.Count)
+                if (i >= injectors.Count)
                 {
-                    // exit if we applied all the injector
-                    if (completeCount == injectors.Count) break;
-                    
                     // if nothing changed in the previous iteration through the injectors, exit
                     if (prevInjectorApplyStates == injectorApplyStates)
-                    {
-                        Console.ForegroundColor = ConsoleColor.Yellow;
-                        Console.WriteLine("      - Some Injectors Failed to Apply:");
-                        
-                        for (var i = 0; i < injectorApplyStates.Length; i++)
-                        {
-                            if (injectorApplyStates[i] == 1) continue;
-                            
-                            Console.WriteLine($"          - {injectors[i].Signature}");
-                        }
-                        
-                        Console.ForegroundColor = ConsoleColor.Gray;
-                        
                         break;
-                    }
                     
                     // otherwise, go through the injectors again
                     prevInjectorApplyStates = injectorApplyStates;
-                    completeCount = 0;
-                    injectorIndex = 0;
+                    i = 0;
                 }
                 
-                // if the next injector was already successfully applied, skip it 
-                if (injectorApplyStates[injectorIndex] == 1)
+                // if the next injector has already been applied, skip it
+                if (injectorApplyStates[i] is InjectorApplyState.Succeeded or InjectorApplyState.Failed)
                 {
-                    injectorIndex++;
-                    completeCount++;
+                    i++;
                     continue;
                 }
                 
-                // get the next injector
-                var injector = injectors[injectorIndex];
-                
-                // TODO: apply the injectors
-                
-                // var success = ApplyInjector(injector);
-                var success = 0;
-                
-                // store the result
-                injectorApplyStates[injectorIndex] = success;
-                
-                // go to the next injector
-                injectorIndex++;
+                // run the next injector
+                injectorApplyStates[i] = injectors[i].Inject();
+                i++;
             }
+            
+            for (var j = 0; j < injectors.Count; j++)
+            {
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.Write("    [");
+                switch (injectorApplyStates[j])
+                {
+                    case InjectorApplyState.Succeeded:
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.Write("  OK  ");
+                        break;
+                    case InjectorApplyState.MissingDependency:
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.Write("DEPEND");
+                        break;
+                    default:
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.Write("FAILED");
+                        break;
+                }
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine($"] {injectors[j].Name}");
+            }
+            Console.ForegroundColor = ConsoleColor.Gray;
         }
     }
 
     #endregion
 
     /// <summary>
-    /// Register a new hoist remap to <see cref="HoistRemappings"/>
+    /// Register a new hoist remapping.
     /// </summary>
-    /// <param name="from">the <see cref="MemberReference"/> to map from</param>
-    /// <param name="to">the <see cref="MemberReference"/> to map to</param>
-    public static void AddHoistRemap(string from, MemberReference to)
+    /// <param name="mapping">the <see cref="HoistRemapping"/></param>
+    public static void AddHoistRemap(HoistRemapping mapping)
     {
-        HoistRemappings.Add(from, to);
+        HoistRemappings.Add(mapping.From, mapping.To);
     }
     
     /// <summary>
-    /// List version of <see cref="AddHoistRemap(Mono.Cecil.MemberReference,Mono.Cecil.MemberReference)"/>
+    /// List version of <see cref="AddHoistRemap(HoistRemapping)"/>
     /// </summary>
     /// <param name="mappings">a list of mappings to add</param>
     public static void AddHoistRemappings(List<HoistRemapping> mappings)

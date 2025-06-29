@@ -10,9 +10,9 @@ public class HoistTypeScanner : ModuleClassScanner<HoistRemapping>
     protected override HoistRemapping ReadAttribute(CustomAttribute attribute, Type owner)
     {
         var target = Util.CreateTypeReference(
-            (string)attribute[0]!,
-            Version.Parse((string)attribute[1]!),
-            (string)attribute[2]!);
+            attribute.Get<string>(0),
+            Version.Parse(attribute.Get<string>(1)),
+            attribute.Get<string>(2));
             
         return new HoistRemapping(owner.FullName, target);
     }

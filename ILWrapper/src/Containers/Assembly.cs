@@ -18,7 +18,7 @@ public class Assembly : IMember<Assembly, AssemblyDefinition>, IDisposable, IMem
         
         Modules = new MemberSet<Module, ModuleDefinition>(Base.Modules);
         
-        Info = new ParentInfo(this);
+        Info = new ParentInfo().With(this);
     }
 
     public Assembly(AssemblyName name, string moduleName, ModuleKind kind) : this(AssemblyDefinition.CreateAssembly(name.Base, moduleName, kind)) {}

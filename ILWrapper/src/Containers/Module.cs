@@ -19,7 +19,7 @@ public class Module : IMember<Module, ModuleDefinition>, IMemberContainer
         Types = MemberSet<Type, TypeReference>.From(Base.Types);
         CustomAttributes = new MemberSet<SubMembers.CustomAttribute, CustomAttribute>(Base.CustomAttributes);
         
-        Info = new ParentInfo(this);
+        Info = new ParentInfo().With(this);
     }
 
     public Module(string name, ModuleKind kind) : this(ModuleDefinition.CreateModule(name, kind)) {}
@@ -93,7 +93,53 @@ public class Module : IMember<Module, ModuleDefinition>, IMemberContainer
         clone.CustomAttributes.ReplaceContents(CustomAttributes, info);
 
         return clone;
+        
     }
+
+    public Field ImportReference(Field f) => new(Base.ImportReference(f.Base));
+    public Method ImportReference(Method m) => new(Base.ImportReference(m.Base));
+    public Type ImportReference(Type t) => new(Base.ImportReference(t.Base));
+    
+    public Field TryImportReference(Field f, out bool success)
+    {
+        try
+        {
+            success = true;
+            return ImportReference(f);
+        }
+        catch
+        {
+            success = false;
+            return f;
+        }
+    }
+    public Method TryImportReference(Method m, out bool success)
+    {
+        try
+        {
+            success = true;
+            return ImportReference(m);
+        }
+        catch
+        {
+            success = false;
+            return m;
+        }
+    }
+    public Type TryImportReference(Type t, out bool success)
+    {
+        try
+        {
+            success = true;
+            return ImportReference(t);
+        }
+        catch
+        {
+            success = false;
+            return t;
+        }
+    }
+    
     
     public override string ToString()
     {

@@ -8,9 +8,9 @@ namespace ILLoom.Transformers;
 public class InjectEnumTransformer(Type injector, Type target) : ITransformer
 {
     private readonly Field[] _fields = injector.Fields.ToArray();
-
+    
     public string Name { get; } = $"{injector.FullName} => {target.FullName}";
-
+    
     public void Apply()
     {
         var info = target.Info;
@@ -20,7 +20,7 @@ public class InjectEnumTransformer(Type injector, Type target) : ITransformer
         {
             if (field.Name == "value__")
                 continue;
-
+            
             var existingField = target.Fields.FirstOrDefault(f => f?.Name == field.Name, null);
             if (existingField != null)
             {

@@ -52,6 +52,17 @@ public class MethodBody : IMember<MethodBody, Mono.Cecil.Cil.MethodBody>, ISubMe
         
         return clone;
     }
+
+    public void AddInstructions(IList<Instruction> instructions, int ilOffset, ParentInfo? info)
+    {
+        for (var i = 0; i < instructions.Count; i++)
+        {
+            var instruction = info == null ? instructions[i] : instructions[i].Clone((ParentInfo)info);
+            
+            Processor.InsertAfter(ilOffset + i, instruction.Base);
+        }
+        
+    }
     
     public override string ToString()
     {

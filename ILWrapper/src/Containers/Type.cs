@@ -29,7 +29,7 @@ public class Type : IMember<Type, TypeReference>, IMember, IMemberContainer
         GenericParameters = new MemberSet<SubMembers.GenericParameter, GenericParameter>(Base.GenericParameters);
         CustomAttributes = new MemberSet<SubMembers.CustomAttribute, CustomAttribute>(baseDef.CustomAttributes);
         
-        Info = new ParentInfo(this);
+        Info = new ParentInfo().With(this);
     }
     
     public Type(string? @namespace, string name, TypeAttributes attributes) :
@@ -88,6 +88,11 @@ public class Type : IMember<Type, TypeReference>, IMember, IMemberContainer
     public bool Implements<T>()
     {
         return Interfaces.Any(interf => interf.Type.Is<T>());
+    }
+    
+    public bool Extends<T>()
+    {
+        return BaseType?.Is<T>() ?? false;
     }
     
     public bool IsEmpty(bool ignoreConstructors = false)

@@ -15,6 +15,8 @@ public class InsertTypeTransformer : ITransformer
     private readonly string[] _path;
     private readonly string _signature;
 
+    private Type? _endType;
+
     public string Name => $"{_type.FullName} as {_signature}";
 
     public InsertTypeTransformer(Type type, Assembly assembly, string signature)
@@ -75,11 +77,11 @@ public class InsertTypeTransformer : ITransformer
         }
         
         // remap the name of the type to insert and add it to the nested types
-        var endType = _type.Clone(new ParentInfo(_assembly.MainModule){Remapper = Program.Remapper});
-        endType.CustomAttributes.RemoveAll(a => a.Type.Is<DontCopyAttribute>());
-        endType.Name = _path[^1];
-        endType.DeclaringType = null;
-        nestedTypes[^1] = endType;
+        _endType = _type.Clone(Program.TargetInfo.With(_assembly.MainModule));
+        _endType.CustomAttributes.RemoveAll(a => a.Type.Is<DontCopyAttribute>());
+        _endType.Name = _path[^1];
+        _endType.DeclaringType = null;
+        nestedTypes[^1] = _endType;
         
         // link up the nested types
         for (var i = 0; i < _path.Length - 1; i++)

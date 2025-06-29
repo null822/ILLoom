@@ -56,7 +56,7 @@ public class AssemblyResolver : IAssemblyResolver
     {
         _assemblies.Clear();
     }
-    
-    public class AssemblyNotFoundException(AssemblyNameReference name)
-        : Exception($"Assembly \"{name.Name}\" v{name.Version} was not found in {nameof(AssemblyResolver)}");
 }
+
+public class AssemblyNotFoundException(AssemblyNameReference name)
+    : Exception($"Assembly \"{name.Name}\" v{name.Version} was not found in {nameof(AssemblyResolver)}");

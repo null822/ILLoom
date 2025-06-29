@@ -11,7 +11,7 @@ public class InjectEnumScanner : ModuleClassScanner<InjectEnumTransformer>
 {
     protected override InjectEnumTransformer ReadAttribute(CustomAttribute attribute, Type owner)
     {
-        var target = new Type((TypeReference)Program.Remap((TypeReference)attribute[0]!));
+        var target = new Type((TypeReference)Program.Remap(attribute.Get<TypeReference>(0)));
         return new InjectEnumTransformer(owner, target);
     }
 

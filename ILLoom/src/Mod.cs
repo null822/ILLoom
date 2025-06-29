@@ -74,8 +74,7 @@ public class Mod
     
     public void ScanInjectors()
     {
-        //TODO: implement injectors
-        new InjectScanner().Scan(_module);
+        Injectors.AddRange(new InjectScanner().Scan(_module));
     }
 
     private static readonly Func<CustomAttribute, bool> IsDontCopy = a => a.Type.Is<DontCopyAttribute>();
@@ -90,7 +89,7 @@ public class Mod
             if (type.CustomAttributes.Any(IsDontCopy))
                 continue;
 
-            var clone = type.Clone(new ParentInfo(Program.TargetModule));
+            var clone = type.Clone(Program.TargetInfo);
             RemoveDontCopyMembers(clone);
             
             if (clone.IsEmpty(true)) 

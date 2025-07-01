@@ -10,7 +10,7 @@ public class Game
         Console.WriteLine($"args[0] = \"{args[0]}\"");
         Test();
         
-        Console.WriteLine(_fort.GetValue());
+        Console.WriteLine($"Fortress Value = {_fort.GetValue()}");
         
         return 0;
     }
@@ -18,7 +18,7 @@ public class Game
     private static void Test()
     {
         Console.WriteLine("Hello from Test() method");
-        throw new Exception("test exception 123");
+        // throw new Exception("test exception 123");
     }
     
     public sealed class Fortress

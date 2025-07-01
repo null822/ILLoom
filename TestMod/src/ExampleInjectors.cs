@@ -23,12 +23,13 @@ public class ExampleInjectors
     public void TestInjector /* injector name */ (string[] args /* inject specifically into Program.Main(string[]) */)
     {
         Console.WriteLine("Injected Hello from test mod :D");
-        Console.WriteLine($"Intercepted args[0] = {args[0]}");
+        Console.WriteLine($"Intercepted args[0] = \"{args[0]}\"");
+        args[0] = "modified args";
         Console.WriteLine(Test2(69));
         var fort = new FortressHoist();
         Console.WriteLine("Fortress Value = " + fort.GetValue());
         
-        Injector.Return();
+        Injector.Return(Math.PI);
     }
     
     // inserts a new method (CheckValue(Int32)) into Program that returns a string, is private, and is static

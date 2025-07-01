@@ -2,15 +2,17 @@
 using ILWrapper;
 using ILWrapper.Members;
 using ILWrapper.SubMembers;
+using LoomModLib;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Instruction = ILWrapper.SubMembers.Instruction;
+using Type = ILWrapper.Containers.Type;
 
 namespace ILLoom.Transformers.Injectors;
 
 public class MethodInjector(Method injector, Method target, IInjectLocation[] locations) : IInjector
 {
-    public string Name => injector.FullName;
+    public string Name => $"{injector.DeclaringType?.FullName}::{injector.Name}";
     
     public InjectorApplyState Inject()
     {
@@ -57,6 +59,12 @@ public class MethodInjector(Method injector, Method target, IInjectLocation[] lo
                 
                 _ => instruction
             };
+
+            if (instruction.OpCode == OpCodes.Call 
+                && instruction.Operand is MethodReference { Name: "Return", DeclaringType.FullName: "LoomModLib.Injector" })
+            {
+                instruction = new Instruction { OpCode = OpCodes.Ret };
+            }
             
             if (instruction.Operand is MemberReference m)
             {
@@ -66,10 +74,10 @@ public class MethodInjector(Method injector, Method target, IInjectLocation[] lo
             injectorInstructions[i] = instruction;
         }
         
+        // inject the instructions
         foreach (var location in locations)
         {
             var offset = location.ResolveIlOffset(target.Body);
-            
             target.Body.AddInstructions(injectorInstructions, offset, Program.TargetInfo.With(target.Body));
         }
         

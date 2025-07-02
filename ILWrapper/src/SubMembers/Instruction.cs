@@ -17,16 +17,11 @@ public class Instruction : IMember<Instruction, Mono.Cecil.Cil.Instruction>, ISu
     }
 
     public Instruction() : this(Mono.Cecil.Cil.Instruction.Create(OpCodes.Nop)) {}
-    public Instruction(OpCode opCode) : this(Mono.Cecil.Cil.Instruction.Create(opCode)) {}
-    
-    private static Mono.Cecil.Cil.Instruction[] InstrArrayToBase(Instruction[] instrArray)
+
+    public Instruction(OpCode opCode, object? operand = null) : this()
     {
-        var newArray = new Mono.Cecil.Cil.Instruction[instrArray.Length];
-        for (var i = 0; i < instrArray.Length; i++)
-        {
-            newArray[i] = instrArray[i].Base;
-        }
-        return newArray;
+        OpCode = opCode;
+        Operand = operand;
     }
     
     public string FullName => $"[{Offset}] {OpCode}{(Operand == null ? "" : $" {Operand}")}";
@@ -36,7 +31,6 @@ public class Instruction : IMember<Instruction, Mono.Cecil.Cil.Instruction>, ISu
     public int Offset { get => Base.Offset; set => Base.Offset = value; }
     public OpCode OpCode { get => Base.OpCode; set => Base.OpCode = value; }
     public object? Operand { get => Base.Operand; set => Base.Operand = value; }
-    
     
     public Instruction Clone(ParentInfo info)
     {

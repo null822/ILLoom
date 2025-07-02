@@ -39,6 +39,8 @@ public class InjectScanner : ModuleMemberScanner<IInjector>
             
             if (attrib.Type.Is<InjectHeadAttribute>())
                 locations[i] = new InjectHead();
+            else if (attrib.Type.Is<InjectIlIndexAttribute>())
+                locations[i] = new InjectIlIndex(attrib.ConstructorArguments[0].As<int>());
             else if (attrib.Type.Is<InjectBeforeReturnAttribute>())
                 locations[i] = new InjectBeforeReturn(attrib.ConstructorArguments[0].As<int>());
         }

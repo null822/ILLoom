@@ -8,18 +8,20 @@ namespace ILLoom.Transformers.Injectors;
 /// </summary>
 public interface IInjectLocation
 {
-    public int ResolveIlOffset(MethodBody body);
+    public int ResolveInstructionIndex(MethodBody body);
 }
 
-public class InjectHead : IInjectLocation
+public class InjectHead() : InjectIlIndex(0);
+public class InjectIlIndex(int index) : IInjectLocation
 {
-    public int ResolveIlOffset(MethodBody body) => 0;
+    public int ResolveInstructionIndex(MethodBody body) => index;
 }
 
 public class InjectBeforeReturn(int i) : IInjectLocation
 {
-    public int ResolveIlOffset(MethodBody body)
+    public int ResolveInstructionIndex(MethodBody body)
     {
+        // TODO: this will only inject into the final ret instruction since br is used instead of ret
         var index = 0;
         for (var j = 0; j < i; j++)
         {

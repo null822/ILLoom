@@ -18,8 +18,9 @@ public class ExampleInjectors
     [InjectorDependency("FixMain", "Injectors", "bugfix-mod")]
     // inject into the method group Program.Main (in class Main)
     [Inject(nameof(Program.Main), typeof(Program))]
-    // the accessibility and attributes (abstract, virtual, static, etc.) do not have to match, but the parameters must
+    // inject specifically into the start of the method
     [InjectHead]
+    // the accessibility and attributes (abstract, virtual, static, etc.) do not have to match, but the parameters must
     public void TestInjector /* injector name */ (string[] args /* inject specifically into Program.Main(string[]) */)
     {
         Console.WriteLine("Injected Hello from test mod :D");
@@ -27,9 +28,10 @@ public class ExampleInjectors
         args[0] = "modified args";
         Console.WriteLine(Test2(69));
         var fort = new FortressHoist();
-        Console.WriteLine("Fortress Value = " + fort.GetValue());
+        Console.WriteLine("Stolen Fortress Value = " + fort.GetValue());
         
-        Injector.Return(Math.PI);
+        if (args[0] == "modified args")
+            Injector.Return(69420);
     }
     
     // inserts a new method (CheckValue(Int32)) into Program that returns a string, is private, and is static

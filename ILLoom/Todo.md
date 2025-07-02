@@ -10,11 +10,13 @@
 - [X] Insert
 - [X] InjectEnum
 - [X] Inject
-  - [ ] Inject locations (within method)
+  - [X] Inject locations (within method)
+    - [ ] More inject locations that will be useful
   - [ ] Return handling
   - [X] Add local variables
   - [X] Remap local variable indexes
-  - [ ] Remove all values added to the evaluation stack during the injected instructions
+  - [ ] Access existing local variables
+  - [ ] Restore the stack after the injected code runs
 - [ ] Inject Dependency
 
 ## Other

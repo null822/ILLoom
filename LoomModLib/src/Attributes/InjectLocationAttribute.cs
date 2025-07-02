@@ -18,12 +18,18 @@ public enum PropertyMethod
 }
 
 /// <summary>
-/// Inject code at the start of the target method
+/// Inject code at the start of the target method.
 /// </summary>
 public class InjectHeadAttribute : InjectLocationAttribute;
 
 /// <summary>
-/// Inject code before a return statement
+/// Inject code before a specific IL instruction in the method.
+/// </summary>
+/// <param name="offset">the index of the IL instruction to insert the code before</param>
+public class InjectIlIndexAttribute(int offset) : InjectLocationAttribute;
+
+/// <summary>
+/// Inject code before a return statement.
 /// </summary>
 /// <param name="returnIndex">the index of the return statement.
 /// May be negative to count from the end (-1 = the last return)</param>

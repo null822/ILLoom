@@ -80,6 +80,100 @@ public class Type : IMember<Type, TypeReference>, IMember, IMemberContainer
         return clone;
     }
     
+    /// <summary>
+    /// Wrapper for <see cref="TryChangeAssembly(Mono.Cecil.TypeReference,Mono.Cecil.AssemblyNameReference,Mono.Cecil.IMetadataResolver,out Mono.Cecil.TypeReference)"/>
+    /// </summary>
+    public bool TryChangeAssembly(AssemblyNameReference newRuntimeAssembly, IMetadataResolver resolver, out Type modifiedType)
+    {
+        var success = TryChangeAssembly(Base, newRuntimeAssembly, resolver, out var result);
+        modifiedType = new Type(result);
+        return success;
+    }
+    
+    /// <summary>
+    /// Changes the assembly of a <see cref="TypeReference"/>, ensuring the referenced type actually exists in that
+    /// assembly.
+    /// </summary>
+    /// <param name="originalType">the type to change the assembly of</param>
+    /// <param name="newAssembly">the new assembly</param>
+    /// <param name="resolver">an <see cref="IMetadataResolver"/> that can resolve types in the
+    /// <paramref name="newAssembly"/>. Used to resolve the modified <see cref="TypeReference"/></param>
+    /// <param name="modifiedType">[out] the modified <see cref="TypeReference"/></param>
+    /// <returns>whether the <paramref name="originalType"/> was moved into the <see cref="newAssembly"/></returns>
+    public static bool TryChangeAssembly(TypeReference originalType, AssemblyNameReference newAssembly,
+        IMetadataResolver resolver, out TypeReference modifiedType)
+    {
+        if (originalType is TypeSpecification specification)
+        {
+            var originalScope = specification.ElementType.Scope;
+            specification.ElementType.Scope = newAssembly;
+            TypeReference remappedRawType = resolver.Resolve(originalType);
+            specification.ElementType.Scope = originalScope; // revert the scope modification
+            if (remappedRawType == null)
+            {
+                modifiedType = originalType;
+                return false;
+            }
+            remappedRawType.Scope = newAssembly;
+            switch (originalType)
+            {
+                default:
+                    modifiedType = remappedRawType;
+                    break;
+                case GenericInstanceType generic:
+                {
+                    modifiedType = new GenericInstanceType(remappedRawType);
+                
+                    foreach (var arg in generic.GenericArguments)
+                    {
+                        ((GenericInstanceType)modifiedType).GenericArguments.Add(arg);
+                    }
+                    
+                    break;
+                }
+                case ArrayType array:
+                    modifiedType = new ArrayType(remappedRawType);
+                    for (var i = 0; i < array.Dimensions.Count; i++)
+                    {
+                        ((ArrayType)modifiedType).Dimensions[i] = array.Dimensions[i];
+                    }
+                    break;
+                case PointerType:
+                    modifiedType = new PointerType(remappedRawType);
+                    break;
+                case PinnedType:
+                    modifiedType = new PinnedType(remappedRawType);
+                    break;
+                case SentinelType:
+                    modifiedType = new SentinelType(remappedRawType);
+                    break;
+                case RequiredModifierType reqModifier:
+                    modifiedType = new RequiredModifierType(reqModifier.ModifierType, remappedRawType);
+                    break;
+                case OptionalModifierType opModifier:
+                    modifiedType = new OptionalModifierType(opModifier.ModifierType, remappedRawType);
+                    break;
+            }
+        }
+        else
+        {
+            var originalScope = originalType.Scope;
+            originalType.Scope = newAssembly;
+            modifiedType = resolver.Resolve(originalType);
+            originalType.Scope = originalScope; // revert the scope modification
+            if (modifiedType == null)
+            {
+                modifiedType = originalType;
+                return false;
+            }
+            
+            modifiedType.Scope = newAssembly;
+        }
+        
+        return true;
+    }
+    
+    
     public bool Is<T>()
     {
         return typeof(T).FullName == FullName;

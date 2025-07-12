@@ -25,9 +25,16 @@ public class Variable : IMember<Variable, VariableDefinition>, ISubMember
     
     public Variable Clone(ParentInfo info)
     {
-        var variable = new Variable(info.Module == null 
-            ? Type 
-            : info.Module!.TryImportReference(info.Remap(Type), out _));
+        var type = Type;
+        
+        if (info.Module != null)
+            type = info.Remap(type);
+        if (info is { RuntimeAssembly: not null, Module: not null, Module.MetadataResolver: not null })
+            type.TryChangeAssembly(info.RuntimeAssembly, info.Module.MetadataResolver, out type);
+        if (info.Module != null)
+            type = info.Module.TryImportReference(type);
+        
+        var variable = new Variable(type);
         
         return variable;
     }

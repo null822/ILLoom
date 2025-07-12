@@ -56,8 +56,16 @@ public class Field : IMember<Field, FieldReference>, IMember
     public IMemberSet<SubMembers.CustomAttribute> CustomAttributes { get; }
     
     public Field Clone(ParentInfo info)
-    {
-        var clone = new Field(Name, Attributes, info.Remap(FieldType))
+    {        
+        var type = FieldType;
+        if (info.Module != null)
+            type = info.Remap(type);
+        if (info is { RuntimeAssembly: not null, Module: not null, Module.MetadataResolver: not null })
+            type.TryChangeAssembly(info.RuntimeAssembly, info.Module.MetadataResolver, out type);
+        if (info.Module != null)
+            type = info.Module.TryImportReference(type);
+        
+        var clone = new Field(Name, Attributes, type)
         {
             Constant = Constant,
             InitialValue = InitialValue,

@@ -30,6 +30,15 @@
       <Content Include="bin\Debug\net9.0\TestMod.pdb" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Reference Include="FNA">
+        <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\Hacknet\FNA.dll</HintPath>
+      </Reference>
+      <Reference Include="Hacknet">
+        <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\Hacknet\Hacknet.exe</HintPath>
+      </Reference>
+    </ItemGroup>
+
     <Target Name="PostBuild" AfterTargets="PostBuildEvent">
         <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" DestinationFolder="../ILLoom/$(OutputPath)/mods" />
     </Target>

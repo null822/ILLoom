@@ -24,7 +24,7 @@ public class AssemblyResolver : IAssemblyResolver
     public void RegisterAssembly(Assembly assembly)
     {
         var name = assembly.Name;
-        _assemblies.Add(name.Name, 
+        _assemblies.TryAdd(name.Name, 
             new Dictionary<Version, AssemblyDefinition>
             {
                 { name.Version, assembly.Base }

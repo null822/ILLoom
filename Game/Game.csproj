@@ -16,9 +16,9 @@
       <Content Include="bin\Debug\net9.0\Game.runtimeconfig.json" />
     </ItemGroup>
     
-    <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-        <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" DestinationFolder="../ILLoom/$(OutputPath)/target" />
-        <Copy SourceFiles="$(OutputPath)$(AssemblyName).runtimeconfig.json" DestinationFolder="../ILLoom/$(OutputPath)/target" />
-    </Target>
+<!--    <Target Name="PostBuild" AfterTargets="PostBuildEvent">-->
+<!--        <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" DestinationFolder="../ILLoom/$(OutputPath)/target" />-->
+<!--        <Copy SourceFiles="$(OutputPath)$(AssemblyName).runtimeconfig.json" DestinationFolder="../ILLoom/$(OutputPath)/target" />-->
+<!--    </Target>-->
 
 </Project>

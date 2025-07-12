@@ -11,6 +11,22 @@ public delegate T Remap<T>(T? original) where T : MemberReference;
 
 public struct ParentInfo
 {
+    public Assembly? Assembly { get; set; }
+    public Module? Module { get; set; }
+    public Type? Type { get; set; }
+    
+    public Method? Method { get; set; }
+    public Field? Field { get; set; }
+    public Property? Property { get; set; }
+    public Event? Event { get; set; }
+    
+    public MethodBody? MethodBody { get; set; }
+    
+    public ParentInfo() { }
+    
+    
+    public AssemblyNameReference? RuntimeAssembly { get; set; }
+    
     public Remap<MemberReference>? Remapper { get; set; }
     public T RemapRef<T>(T? original) where T : MemberReference
     {
@@ -31,19 +47,6 @@ public struct ParentInfo
     {
         MissingParentInfoException.ThrowIfMissing(this, infoTypes);
     }
-    
-    public Assembly? Assembly { get; set; }
-    public Module? Module { get; set; }
-    public Type? Type { get; set; }
-    
-    public Method? Method { get; set; }
-    public Field? Field { get; set; }
-    public Property? Property { get; set; }
-    public Event? Event { get; set; }
-    
-    public MethodBody? MethodBody { get; set; }
-    
-    public ParentInfo() { }
 
     public ParentInfo With(Assembly? assembly)
     {

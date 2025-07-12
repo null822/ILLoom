@@ -40,6 +40,7 @@ public static class Program
     };
     
     private static System.Reflection.Assembly _patchedAssembly = null!;
+    private static string _patchedAssemblyPath = null!;
     
     private static int Main(string[] args)
     {
@@ -51,30 +52,50 @@ public static class Program
         _targetPath = args[0].Replace('\\', '/');
         
         AssemblyResolver.RegisterAssemblies(RuntimeEnvironment.GetRuntimeDirectory());
+        AssemblyResolver.RegisterAssemblies($"{RootDirectory}/mods");
         AssemblyResolver.RegisterAssemblies($"{RootDirectory}/libs");
         
         _targetAssembly = Assembly.ReadAssembly(_targetPath, ReaderParameters);
+        
         AssemblyResolver.RegisterAssembly(_targetAssembly);
         
         TargetInfo = new ParentInfo
         {
             Module = TargetModule,
-            Remapper = Remapper
+            Remapper = Remapper,
+            RuntimeAssembly = new AssemblyNameReference("mscorlib", Version.Parse("4.0.0.0"))
         };
         TargetModule.Info = TargetInfo;
-        
-        // main script
-        Util.Heading("Loading Mods");
-        LoadMods();
-        Util.Heading("Applying Mods");
-        ApplyMods();
-        Util.Heading("Build Assembly");
-        BuildAssembly();
-        Util.Heading("Modloading Complete", '#');
-        Console.WriteLine();
-        Util.Heading("Launch Assembly");
-        LaunchAssembly();
-        
+
+        // try
+        // {
+
+            // main script
+            Util.Heading("Loading Mods");
+            LoadMods();
+            Util.Heading("Applying Mods");
+            ApplyMods();
+            Util.Heading("Build Assembly");
+            BuildAssembly();
+            Util.Heading("Modloading Complete", '#');
+            Console.WriteLine();
+            Util.Heading("Launch Assembly");
+            LaunchAssembly();
+        //
+        // }
+        // catch (Exception e)
+        // {
+        //     Util.Heading("Failed to Apply Mods", color: ConsoleColor.Red);
+        //     
+        //     Console.ForegroundColor = ConsoleColor.Red;
+        //     var source = e.GetType().Module.Name;
+        //     if (source[..source.IndexOf('.')] is "ILWrapper" or "ILLoom")
+        //         Console.WriteLine(e.Message);
+        //     else
+        //         throw;
+        //     Console.ForegroundColor = ConsoleColor.Gray;
+        // }
+
         return 0;
     }
 
@@ -103,6 +124,7 @@ public static class Program
     {
         Array.ForEach(_mods, m => m.RegisterTypeHoisters());    // REG   [HoistType]
         Array.ForEach(_mods, m => m.RegisterHoisters());        // REG   [Hoist]
+        PrintHoistRemappings();
         Array.ForEach(_mods, m => m.ScanTypeInserters());       // LOAD  [InsertType]
         ApplyTypeInsertions();                                       // APPLY [InsertType]
         Array.ForEach(_mods, m => m.ScanInserters());           // LOAD  [Insert]
@@ -114,8 +136,8 @@ public static class Program
         ApplyEnumInjectors();                                        // APPLY [InjectEnum]
         ApplyInjectors();                                            // APPLY [Inject]
     }
-    
-    private static void BuildAssembly()
+
+    private static void PrintHoistRemappings()
     {
         Console.WriteLine("Hoist Remappings: ");
         Console.ForegroundColor = ConsoleColor.DarkGray;
@@ -124,66 +146,45 @@ public static class Program
             Console.WriteLine($"  {remapping.Key} => {remapping.Value.FullName}");
         }
         Console.ForegroundColor = ConsoleColor.Gray;
+    }
+    
+    private static void BuildAssembly()
+    {
+        _patchedAssemblyPath = $"{RootDirectory}/out/{Path.GetFileName(_targetPath)}";
         
         Directory.CreateDirectory("out");
-        _targetAssembly.Write("out/patched.dll");
+        _targetAssembly.Write(_patchedAssemblyPath);
+        _targetAssembly.Dispose();
         
         var targetConfig = _targetPath.Remove(_targetPath.LastIndexOf('.')) + ".runtimeconfig.json";
-        File.Copy(targetConfig, "out/patched.runtimeconfig.json", true);
-        
-        // convert ILWrapper.Member.Assembly into System.Reflection.Assembly
-        var assemblyStream = new MemoryStream();
-        _targetAssembly.Write(assemblyStream);
-        _patchedAssembly = System.Reflection.Assembly.Load(assemblyStream.ToArray());
-        assemblyStream.Dispose();
-        _targetAssembly.Dispose();
+        if (File.Exists(targetConfig))
+            File.Copy(targetConfig, "out/patched.runtimeconfig.json", true);
         
         Console.WriteLine("Assembly Built Successfully");
     }
 
     private static void LaunchAssembly()
     {
-        // invoke the entrypoint
-        
-        var action = ApplicationAction.Constructing;
-        try
+        var startInfo = new ProcessStartInfo
         {
-            var entrypoint = _patchedAssembly.EntryPoint ?? throw new Exception("Game assembly does not contain an entrypoint");
-            var o = Activator.CreateInstance(entrypoint.ReflectedType ??
-                                             throw new Exception("Game assembly does not contain a valid entrypoint"));
-            
-            string[] applicationArgs = ["hello"];
-            action = ApplicationAction.Running;
-            
-            Console.ForegroundColor = ConsoleColor.White;
-            var exitCode = (int)(entrypoint.Invoke(o, [applicationArgs]) ?? 0);
-            
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine($"Application Exited with Code {exitCode}");
-            
-            action = ApplicationAction.Disposing;
-            // nothing to dispose
-        }
-        catch (Exception e)
-        {
-            if (e is not TargetInvocationException { InnerException: not null } invocationException)
-                throw;
-            
-            var innerException = invocationException.InnerException;
-            
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"Exception thrown when {action.ToString().ToLower()} application: {innerException.GetType()}: {innerException.Message}");
-            
-            var trace = new StackTrace(innerException, true).GetFrames();
-            for (var i = 0; i < trace.Length - 2; i++)
-            {
-                var frame = trace[i];
-                Console.WriteLine($"   at {GetMethodSig(frame.GetMethod())} IL_{frame.GetILOffset():X4}");
-            }
-            
-            Console.ForegroundColor = ConsoleColor.White;
-        }
+            FileName = _patchedAssemblyPath,
+            WorkingDirectory = $"{RootDirectory}/out",
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            RedirectStandardInput = true
+        };
         
+        var p = Process.Start(startInfo);
+        if (p == null) throw new Exception("Failed to Start Application");
+        
+        p.OutputDataReceived += (_, args) => Console.WriteLine(args.Data);
+        p.BeginOutputReadLine();
+        p.BeginErrorReadLine();
+        p.WaitForExit();
+        
+        Console.ForegroundColor = ConsoleColor.Magenta;
+        Console.WriteLine($"Process finished with exit code {p.ExitCode}.");
         Console.ForegroundColor = ConsoleColor.Gray;
     }
 
@@ -200,7 +201,6 @@ public static class Program
             {
                 Console.WriteLine($"    - {typeInserter.Name}");
                 typeInserter.Apply();
-                // AddHoistRemap(typeInserter.GetRemapping());
             }
         }
     }
@@ -350,7 +350,7 @@ public static class Program
     /// <summary>
     /// Remap a <see cref="MemberReference"/> using the <see cref="HoistRemappings"/>
     /// </summary>
-    public static MemberReference Remap(MemberReference? reference)
+    public static T Remap<T>(T? reference) where T : MemberReference
     {
         // if null, return null
         if (reference == null) return reference!;
@@ -372,7 +372,7 @@ public static class Program
             {
                 if (HoistRemappings.TryGetValue(typeChain[i].FullName, out var remappedType))
                 {
-                    if (i == 0) return remappedType;
+                    if (i == 0) return (T)remappedType;
                     
                     typeChain[i - 1].DeclaringType = (TypeReference)remappedType;
                     return reference;
@@ -385,11 +385,11 @@ public static class Program
         
         // if the reference exists explicitly, remap it
         if (HoistRemappings.TryGetValue(reference.FullName, out var remappedMember))
-            return remappedMember;
+            return (T)remappedMember;
         
         // otherwise, try to remap the declaring type
         try {
-            reference.DeclaringType = (TypeReference)Remap(reference.DeclaringType);
+            reference.DeclaringType = Remap(reference.DeclaringType);
         }
         catch (InvalidOperationException) {}
         
@@ -421,13 +421,6 @@ public static class Program
         s.Append(')');
         
         return s.ToString();
-    }
-    
-    private enum ApplicationAction
-    {
-        Constructing,
-        Running,
-        Disposing
     }
 }
 

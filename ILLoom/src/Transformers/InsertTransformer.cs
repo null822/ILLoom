@@ -2,7 +2,6 @@
 using ILWrapper;
 using ILWrapper.Members;
 using LoomModLib.Attributes;
-using Mono.Cecil;
 using Type = ILWrapper.Containers.Type;
 
 namespace ILLoom.Transformers;
@@ -13,8 +12,7 @@ public class InsertTransformer(Type type, IMember member, string newName) : ITra
 
     public void Apply()
     {
-        var info = type.Info;
-        info.Remapper = Program.Remapper;
+        var info = Program.TargetInfo.With(type);
         
         switch (member)
         {

@@ -16,41 +16,30 @@ public class HoistScanner : ModuleMemberScanner<HoistRemapping>
         
         var targetMember = attribute.Get<string>(0);
         var type = attribute.Get<TypeReference>(1);
-        Type targetType;
+        TypeReference targetType;
         if (type == null!)
         {
             var ownerType = owner.MemberBase.DeclaringType;
             var remappedOwnerType = Program.Remap(ownerType);
             if (ownerType.FullName == remappedOwnerType.FullName)
                 throw new InvalidHoistAttribute(owner);
-            targetType = new Type((TypeReference)remappedOwnerType);
+            targetType = remappedOwnerType;
         }
         else
         {
-            targetType = new Type((TypeReference)Program.Remap(type));
+            targetType = Program.Remap(type);
         }
         
         MemberReference target = owner switch
         {
-            Method m => CreateMethodReference(targetMember, m, targetType),
-            Field m => new FieldReference(targetMember, m.FieldType.Base, targetType.Base),
-            Property m => new PropertyDefinition(targetMember, m.Attributes, targetType.Base),
-            Event m => new EventDefinition(targetMember, m.Attributes, targetType.Base),
+            Method m => Method.CreateReference(targetMember, m, targetType),
+            Field m => new FieldReference(targetMember, m.FieldType.Base, targetType),
+            Property m => new PropertyDefinition(targetMember, m.Attributes, targetType),
+            Event m => new EventDefinition(targetMember, m.Attributes, targetType),
             _ => throw new Exception($"Unexpected member type: {owner.GetType()}")
         };
         
         return new HoistRemapping(originalName, target);
-    }
-
-    private static MethodReference CreateMethodReference(string name, Method m, Type targetType)
-    {
-        var methodRef = new MethodReference(name, m.ReturnType.Base, targetType.Base);
-        methodRef.Parameters.Clear();
-        foreach (var p in m.Parameters)
-        {
-            methodRef.Parameters.Add(p.Base);
-        }
-        return methodRef;
     }
     
     protected override bool IncludeAttribute(CustomAttribute attribute)

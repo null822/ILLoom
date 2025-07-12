@@ -29,7 +29,7 @@ public class MethodInjector(Method injector, Method target, IInjectLocation[] lo
                 instructions.Add(instruction);
             }
             
-            target.Body.InsertInstructions(startIndex, instructions, Program.TargetInfo.With(target.Body),
+            target.Body.InsertInstructions(startIndex, instructions, Program.TargetInfo.With(target.Body), 
                 true);
             
             var injectEnd = startIndex + instructions.Count;
@@ -83,10 +83,28 @@ public class MethodInjector(Method injector, Method target, IInjectLocation[] lo
                 {
                     instruction = new Instruction(OpCodes.Ret);
                 }
-
-                if (instruction.Operand is MemberReference m)
+                
+                if (instruction.Operand is MemberReference memberReference)
                 {
-                    instruction.Operand = Program.Remap(m);
+                    instruction.Operand = Program.Remap(memberReference);
+                }
+                
+                if (instruction.Operand is TypeReference typeReference)
+                {
+                    instruction.Operand = target.Module.Base.ImportReference(typeReference);
+                }
+                else
+                {
+                    if (instruction.Operand is MethodReference methodReference)
+                    {
+                        methodReference.ReturnType = target.Module.Base.ImportReference(methodReference.ReturnType);
+                        instruction.Operand = target.Module.Base.ImportReference(methodReference);
+                    }
+                    else if (instruction.Operand is FieldReference fieldReference)
+                    {
+                        fieldReference.FieldType = target.Module.Base.ImportReference(fieldReference.FieldType);
+                        instruction.Operand = target.Module.Base.ImportReference(fieldReference);
+                    }
                 }
                 
                 target.Body.ReplaceInstruction(i, instruction);

@@ -51,7 +51,16 @@ public class Method : IMember<Method, MethodReference>, IMember
     public Method Clone(ParentInfo info)
     {
         info.RequireTypes(ParentInfoType.Type);
-        var clone = new Method(Name, Attributes, info.Remap(ReturnType))
+        
+        var type = ReturnType;
+        if (info.Module != null)
+            type = info.Remap(type);
+        if (info is { RuntimeAssembly: not null, Module: not null, Module.MetadataResolver: not null })
+            type.TryChangeAssembly(info.RuntimeAssembly, info.Module.MetadataResolver, out type);
+        if (info.Module != null)
+            type = info.Module.TryImportReference(type);
+        
+        var clone = new Method(Name, Attributes, type)
         {
             DeclaringType = info.Type!,
             Attributes = Attributes,
@@ -65,6 +74,17 @@ public class Method : IMember<Method, MethodReference>, IMember
         clone.Overrides.ReplaceContents(Overrides, info);
         
         return clone;
+    }
+    
+    public static MethodReference CreateReference(string name, Method m, TypeReference targetType)
+    {
+        var methodRef = new MethodReference(name, m.ReturnType.Base, targetType);
+        methodRef.Parameters.Clear();
+        foreach (var p in m.Parameters)
+        {
+            methodRef.Parameters.Add(p.Base);
+        }
+        return methodRef;
     }
 
     public override string ToString()

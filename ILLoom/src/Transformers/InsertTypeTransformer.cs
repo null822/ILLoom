@@ -18,7 +18,7 @@ public class InsertTypeTransformer : ITransformer
     private Type? _endType;
 
     public string Name => $"{_type.FullName} as {_signature}";
-
+    
     public InsertTypeTransformer(Type type, Assembly assembly, string signature)
     {
         _type = type;

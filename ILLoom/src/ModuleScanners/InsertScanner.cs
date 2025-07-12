@@ -14,7 +14,7 @@ public class InsertScanner : ModuleMemberScanner<InsertTransformer>
     {
         var newName = attribute.Get<string>(0);
         var targetType = new Type(
-            ((TypeReference)Program.Remap(attribute.Get<TypeReference>(1))).Resolve());
+            Program.Remap(attribute.Get<TypeReference>(1)).Resolve());
         
         return new InsertTransformer(targetType, owner, newName);
     }

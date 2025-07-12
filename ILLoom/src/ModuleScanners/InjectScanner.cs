@@ -79,7 +79,7 @@ public class InjectScanner : ModuleMemberScanner<IInjector>
         {
             method = (Method)owner;
             target = targetType.Methods
-                .First(m => m.Name == targetMember);
+                .First(m => m.Name == targetMember && m.Parameters.Matches(method.Parameters));
         }
         
         return new MethodInjector(method, target, locations);

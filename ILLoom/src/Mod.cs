@@ -85,7 +85,6 @@ public class Mod
         // all remaining types will be copied into the target application
         foreach (var type in _module.Types)
         {
-            
             if (type.CustomAttributes.Any(IsDontCopy))
                 continue;
 

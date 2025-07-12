@@ -1,4 +1,5 @@
-﻿using Game;
+﻿/*
+using Game;
 using LoomModLib;
 using LoomModLib.Attributes;
 
@@ -21,7 +22,7 @@ public class ExampleInjectors
     // inject specifically into the start of the method
     [InjectHead]
     // the accessibility and attributes (abstract, virtual, static, etc.) do not have to match, but the parameters must
-    public void TestInjector /* injector name */ (string[] args /* inject specifically into Program.Main(string[]) */)
+    public void TestInjector /* injector name #1# (string[] args /* inject specifically into Program.Main(string[]) #1#)
     {
         Console.WriteLine("Injected Hello from test mod :D");
         Console.WriteLine($"Intercepted args[0] = \"{args[0]}\"");
@@ -118,3 +119,4 @@ public class ExampleInjectors
         }
     }
 }
+*/

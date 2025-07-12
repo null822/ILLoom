@@ -140,6 +140,11 @@ public class Module : IMember<Module, ModuleDefinition>, IMemberContainer
         }
     }
     
+    public Type TryImportReference(Type t)
+    {
+        return TryImportReference(t, out _);
+    }
+    
     
     public override string ToString()
     {

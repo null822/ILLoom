@@ -39,11 +39,9 @@ public static class Util
         return target;
     }
     
-    public static TypeReference CreateTypeReference(string assemblyName, Version version, string signature)
+    public static TypeReference CreateTypeReference(string assemblyName, string name, Version version, string ns)
     {
-        var separatorIndex = signature.LastIndexOf('.');
-        var @namespace = signature[..separatorIndex];
-        var path = signature[(separatorIndex + 1)..].Split('/');
+        var path = name.Split('/');
         
         var assembly = Program.AssemblyResolver.Resolve(
             new AssemblyNameReference(assemblyName, version));
@@ -53,7 +51,7 @@ public static class Util
         // create a reference to all the types in the chain of nested types the target type is in
         for (var i = 0; i < path.Length; i++)
         {
-            var type = new TypeReference(i == 0 ? @namespace : "", path[i], assembly.MainModule, Program.TargetModule);
+            var type = new TypeReference(i == 0 ? ns : "", path[i], assembly.MainModule, Program.TargetModule);
             nestedTypes[i] = type;
         }
         

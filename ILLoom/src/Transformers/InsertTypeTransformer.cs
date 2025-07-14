@@ -18,15 +18,14 @@ public class InsertTypeTransformer : ITransformer
 
     public string Name => $"{_type.FullName} as {_signature}";
     
-    public InsertTypeTransformer(TypeDefinition type, AssemblyDefinition assembly, string signature)
+    public InsertTypeTransformer(TypeDefinition type, AssemblyDefinition assembly, string name, string ns)
     {
         _type = type;
         _assembly = assembly;
-        
-        _signature = signature;
-        var separatorIndex = signature.LastIndexOf('.');
-        _namespace = signature[..separatorIndex];
-        _path = signature[(separatorIndex + 1)..].Split('/');
+
+        _signature = $"{ns}.{name}";
+        _namespace = ns;
+        _path = name.Split('/');
     }
     
     public void Apply()

@@ -4,13 +4,14 @@
 /// Remap all references to this type to the specified type.
 /// </summary>
 /// <param name="assembly">the name of the assembly to remap to</param>
-/// <param name="version">the version of the assembly to remap to</param>
 /// <param name="targetType">the name of the type to remap to. Can be a nested type</param>
+/// <param name="ns">the namespace of the type to remap to. Will default to the assembly name if not set</param>
+/// <param name="assemblyVersion">the version of the assembly to remap to</param>
 [AttributeUsage(AttributeTargets.Class
                 | AttributeTargets.Struct
                 | AttributeTargets.Interface
                 | AttributeTargets.Enum)]
-public class HoistTypeAttribute(string assembly, string targetType, string assemblyVersion = "*") : Attribute;
+public class HoistTypeAttribute(string assembly, string targetType, string ns = "<asm_name>", string assemblyVersion = "*") : Attribute;
 
 
 /// <summary>

@@ -35,13 +35,46 @@ public class Test
         Settings.recoverFromErrorsSilently = false;
     }
     
-    [HoistType("Hacknet", "Game1")]
-    private class HacknetGame
+    
+    [Inject("switchTheme", typeof(ThemeManager))]
+    [InjectHead]
+    private void OverrideTheme(object osObject, OSTheme theme)
     {
-        [Insert("GameTime", typeof(HacknetGame))]
+        theme = OSTheme.HackerGreen;
+    }
+    
+    [HoistType]
+    private class MainMenu
+    {
+        [Hoist]
+        private Color buttonColor;
+        
+        [Hoist]
+        public static string OSVersion;
+
+        
+        [Inject("LoadContent")]
+        [InjectIlIndex(9)]
+        private void ChangeMenuButtonColor()
+        {
+            buttonColor = Color.Magenta;
+        }
+        
+        [Inject(".cctor")]
+        [InjectIlIndex(3)]
+        private void ModifyOsVersion()
+        {
+            OSVersion += '*';
+        }
+    }
+    
+    [HoistType(name:"Game1")]
+    private class Game
+    {
+        [Insert]
         public static TimeSpan GameTime = TimeSpan.Zero;
         
-        [Inject("Update", typeof(HacknetGame))]
+        [Inject("Update")]
         [InjectHead]
         private static unsafe void StealGameTime(GameTime gameTime)
         {
@@ -53,54 +86,22 @@ public class Test
         }
     }
     
-    [Inject("switchTheme", typeof(ThemeManager))]
-    [InjectHead]
-    private void OverrideTheme(object osObject, OSTheme theme)
-    {
-        theme = OSTheme.HackerGreen;
-    }
-    
-    [HoistType("Hacknet", "MainMenu")]
-    private class MainMenu
-    {
-        [Hoist("buttonColor")]
-        private Color buttonColor;
-        
-        [Hoist("OSVersion")]
-        public static string OSVersion;
-
-        
-        [Inject("LoadContent", typeof(MainMenu))]
-        [InjectIlIndex(9)]
-        private void ChangeMenuButtonColor()
-        {
-            buttonColor = Color.Magenta;
-        }
-        
-        [Inject(".cctor", typeof(MainMenu))]
-        [InjectIlIndex(3)]
-        private void ModifyOsVersion()
-        {
-            OSVersion += '*';
-        }
-    }
-    
-    [HoistType("Hacknet", "Button", "Hacknet.Gui")]
+    [HoistType(ns: "Hacknet.Gui")]
     private class Button
     {
-        [Insert("CalculateDynamicHue", typeof(Button))]
+        [Insert]
         private static Color CalculateDynamicHue()
         {
             const float period = 60;
             
             // for god knows what reason, hue is in [0,6] range, not [0, tau] or [0, 360]
-            var h = (float)HacknetGame.GameTime.TotalMilliseconds * 6 / (period * 1000f) % 6;
+            var h = (float)Game.GameTime.TotalMilliseconds * 6 / (period * 1000f) % 6;
             var c = new HSLColor(h, 1f, 0.5f).ToRGB();
             
             return c;
         }
         
-        [Inject("drawModernButton", typeof(Button))]
+        [Inject("drawModernButton")]
         [InjectHead]
         private void OverrideButtonColor(int myID, int x, int y, int width, int height, string text, Color? selectedColor, Texture2D tex)
         {
@@ -108,10 +109,10 @@ public class Test
         }
     }
     
-    [HoistType("Hacknet", "Utils")]
+    [HoistType]
     private class Utils
     {
-        [Inject("SendRealWorldEmail", typeof(Utils))]
+        [Inject("SendRealWorldEmail")]
         [InjectHead]
         public static void DisableCrashEmail(string subject, string to, string body)
         {

@@ -12,11 +12,12 @@ public class InsertTypeScanner : ModuleClassScanner<InsertTypeTransformer>
     protected override InsertTypeTransformer ReadAttribute(CustomAttribute attribute, TypeDefinition owner)
     {
         var asmName = attribute.Get<string>(0);
-        var name = attribute.Get<string>(1);
-        var nsString = attribute.Get<string>(2);
+        var nameStr = attribute.Get<string>(1);
+        var nsStr = attribute.Get<string>(2);
         var versionStr = attribute.Get<string>(3);
         
-        var ns = nsString == "<asm_name>" ? asmName : nsString;
+        var name = nameStr == "<type_name>" ? owner.Name : nameStr;
+        var ns = nsStr == "<asm_name>" ? asmName : nsStr;
         var version = versionStr == "*" ? ILLib.Util.AllVersions : Version.Parse(versionStr);
         
         var targetAssembly = Program.AssemblyResolver.Resolve(new AssemblyNameReference(asmName, version));

@@ -9,4 +9,4 @@
 [AttributeUsage(AttributeTargets.Method
                 | AttributeTargets.Field
                 | AttributeTargets.Property, AllowMultiple = true)]
-public class InjectAttribute(string targetMember, Type targetType) : Attribute;
+public class InjectAttribute(string targetMember, Type? targetType = null) : Attribute;

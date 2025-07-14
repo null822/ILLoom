@@ -13,21 +13,10 @@ public class HoistScanner : ModuleMemberScanner<HoistRemapping>
     {
         var originalName = owner.FullName;
         
-        var targetMember = attribute.Get<string>(0);
-        var type = attribute.Get<TypeReference>(1);
-        TypeReference targetType;
-        if (type == null!)
-        {
-            var ownerType = owner.DeclaringType;
-            var remappedOwnerType = Program.Remap(ownerType);
-            if (ownerType.FullName == remappedOwnerType.FullName)
-                throw new InvalidHoistAttribute(owner);
-            targetType = remappedOwnerType;
-        }
-        else
-        {
-            targetType = Program.Remap(type);
-        }
+        var targetMemberStr = attribute.Get<string>(0);
+        var targetType = Program.Remap(attribute.Get<TypeReference?>(1) ?? owner.DeclaringType);
+        
+        var targetMember = targetMemberStr == "<member_name>" ? owner.Name : targetMemberStr;
         
         MemberReference target = owner switch
         {

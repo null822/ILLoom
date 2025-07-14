@@ -55,6 +55,7 @@ public static class Program
         AssemblyResolver.RegisterAssemblies($"{RootDirectory}/libs");
         
         _targetAssembly = AssemblyDefinition.ReadAssembly(_targetPath, ReaderParameters);
+        TargetModule.Name = TargetModule.Name[..TargetModule.Name.IndexOf('.')];
         
         AssemblyResolver.RegisterAssembly(_targetAssembly);
         

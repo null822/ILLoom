@@ -4,15 +4,15 @@
 /// Insert this type into the specified location.
 /// </summary>
 /// <param name="assembly">the name of the assembly to insert into</param>
-/// <param name="targetType">the new name of the type once inserted. Can be a nested type; containing classes will be
-/// auto-generated</param>
+/// <param name="newName">the new name of the type once inserted. Can be a nested type; containing classes will be
+/// auto-generated. Will default to the name of the type this attribute is applied to if unset</param>
 /// <param name="ns">the namespace to insert the type into. Will default to the assembly name if not set</param>
 /// <param name="assemblyVersion">the version of the assembly to insert into</param>
 [AttributeUsage(AttributeTargets.Class
                 | AttributeTargets.Struct
                 | AttributeTargets.Interface
                 | AttributeTargets.Enum, AllowMultiple = true)]
-public class InsertTypeAttribute(string assembly, string targetType, string ns = "<asm_name>", string assemblyVersion = "*") : Attribute;
+public class InsertTypeAttribute(string assembly, string newName = "<type_name>", string ns = "<asm_name>", string assemblyVersion = "*") : Attribute;
 
 /// <summary>
 /// Insert this member into the specified location.
@@ -25,4 +25,4 @@ public class InsertTypeAttribute(string assembly, string targetType, string ns =
                 | AttributeTargets.Event
                 | AttributeTargets.Delegate
                 | AttributeTargets.Constructor, AllowMultiple = true)]
-public class InsertAttribute(string newName, Type parentType) : Attribute;
+public class InsertAttribute(string newName = "<member_name>", Type? parentType = null) : Attribute;

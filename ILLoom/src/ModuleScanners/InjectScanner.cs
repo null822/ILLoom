@@ -47,7 +47,7 @@ public class InjectScanner : ModuleMemberScanner<IInjector>
         
         // resolve inject method and target
         var targetMember = attribute.Get<string>(0);
-        var targetType = Program.Remap(attribute.Get<TypeReference>(1)).Resolve();
+        var targetType = Program.Remap(attribute.Get<TypeReference?>(1) ?? owner.DeclaringType).Resolve();
         
         MethodDefinition method;
         MethodDefinition target;

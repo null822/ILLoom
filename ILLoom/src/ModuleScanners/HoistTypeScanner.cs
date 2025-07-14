@@ -10,12 +10,14 @@ public class HoistTypeScanner : ModuleClassScanner<HoistRemapping>
 {
     protected override HoistRemapping ReadAttribute(CustomAttribute attribute, TypeDefinition owner)
     {
-        var asmName = attribute.Get<string>(0);
-        var name = attribute.Get<string>(1);
-        var nsString = attribute.Get<string>(2);
+        var asmNameStr = attribute.Get<string>(0);
+        var nameStr = attribute.Get<string>(1);
+        var nsStr = attribute.Get<string>(2);
         var versionStr = attribute.Get<string>(3);
         
-        var ns = nsString == "<asm_name>" ? asmName : nsString;
+        var asmName = asmNameStr == "<target_asm>" ? Program.TargetModule.Assembly.Name.Name : nameStr;
+        var name = nameStr == "<type_name>" ? owner.Name : nameStr;
+        var ns = nsStr == "<asm_name>" ? asmName : nsStr;
         var version = versionStr == "*" ? ILLib.Util.AllVersions : Version.Parse(versionStr);
         
         var target = Util.CreateTypeReference(asmName, name, version, ns);

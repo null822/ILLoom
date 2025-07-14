@@ -2,6 +2,8 @@
 
 public static class Util
 {
+    public static readonly Version AllVersions = new(int.MaxValue, int.MaxValue, int.MaxValue, int.MaxValue);
+    
     private const ConsoleColor DefaultColor = ConsoleColor.Gray;
     
     private const bool EnableLog = true;

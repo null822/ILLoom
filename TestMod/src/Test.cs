@@ -35,7 +35,7 @@ public class Test
         Settings.recoverFromErrorsSilently = false;
     }
     
-    [HoistType("Hacknet", "1.0.0.0", "Hacknet.Game1")]
+    [HoistType("Hacknet", "Hacknet.Game1")]
     private class HacknetGame
     {
         [Insert("GameTime", typeof(HacknetGame))]
@@ -60,7 +60,7 @@ public class Test
         theme = OSTheme.HackerGreen;
     }
     
-    [HoistType("Hacknet", "1.0.0.0", "Hacknet.MainMenu")]
+    [HoistType("Hacknet", "Hacknet.MainMenu")]
     private class MainMenu
     {
         [Hoist("buttonColor")]
@@ -85,7 +85,7 @@ public class Test
         }
     }
     
-    [HoistType("Hacknet", "1.0.0.0", "Hacknet.Gui.Button")]
+    [HoistType("Hacknet", "Hacknet.Gui.Button")]
     private class Button
     {
         [Insert("CalculateDynamicHue", typeof(Button))]
@@ -107,8 +107,8 @@ public class Test
             selectedColor = CalculateDynamicHue();
         }
     }
-
-    [HoistType("Hacknet", "1.0.0.0", "Hacknet.Utils")]
+    
+    [HoistType("Hacknet", "Hacknet.Utils")]
     private class Utils
     {
         [Inject("SendRealWorldEmail", typeof(Utils))]

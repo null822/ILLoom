@@ -10,10 +10,13 @@ public class HoistTypeScanner : ModuleClassScanner<HoistRemapping>
 {
     protected override HoistRemapping ReadAttribute(CustomAttribute attribute, TypeDefinition owner)
     {
+        var versionStr = attribute.Get<string>(2);
+        var version = versionStr == "*" ? ILLib.Util.AllVersions : Version.Parse(versionStr);
+        
         var target = Util.CreateTypeReference(
             attribute.Get<string>(0),
-            Version.Parse(attribute.Get<string>(1)),
-            attribute.Get<string>(2));
+            version,
+            attribute.Get<string>(1));
             
         return new HoistRemapping(owner.FullName, target);
     }

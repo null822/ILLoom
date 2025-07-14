@@ -10,7 +10,7 @@
                 | AttributeTargets.Struct
                 | AttributeTargets.Interface
                 | AttributeTargets.Enum)]
-public class HoistTypeAttribute(string assembly, string version,  string targetType) : Attribute;
+public class HoistTypeAttribute(string assembly, string targetType, string assemblyVersion = "*") : Attribute;
 
 
 /// <summary>

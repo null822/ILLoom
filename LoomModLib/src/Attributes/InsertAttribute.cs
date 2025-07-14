@@ -11,7 +11,7 @@
                 | AttributeTargets.Struct
                 | AttributeTargets.Interface
                 | AttributeTargets.Enum, AllowMultiple = true)]
-public class InsertTypeAttribute(string assembly, string version, string targetType) : Attribute;
+public class InsertTypeAttribute(string assembly, string targetType, string version = "*") : Attribute;
 
 /// <summary>
 /// Insert this member into the specified location.

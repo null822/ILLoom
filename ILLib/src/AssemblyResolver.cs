@@ -11,11 +11,21 @@ public class AssemblyResolver : IAssemblyResolver
     
     public AssemblyDefinition Resolve(AssemblyNameReference assemblyName, ReaderParameters parameters)
     {
-        if (_assemblies.TryGetValue(assemblyName.Name, out var assemblies)
-            && assemblies.TryGetValue(assemblyName.Version, out var assembly))
+        if (_assemblies.TryGetValue(assemblyName.Name, out var assemblies))
         {
-            return assembly;
+            if (assemblies.Count == 0)
+                throw new AssemblyNotFoundException(assemblyName);
+            
+            if (assemblyName.Version == Util.AllVersions)
+            {
+                return assemblies.Values.First();
+            }
+            if (assemblies.TryGetValue(assemblyName.Version, out var assembly))
+            {
+                return assembly;
+            }
         }
+            
 
         throw new AssemblyNotFoundException(assemblyName);
     }

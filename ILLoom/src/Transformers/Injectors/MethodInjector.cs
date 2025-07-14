@@ -1,13 +1,12 @@
 ﻿using ILLoom.Transformers.TransformerTypes;
-using ILWrapper.Members;
-using ILWrapper.SubMembers;
+using ILLib.Extensions;
+using ILLib.Extensions.SubMembers;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using Instruction = ILWrapper.SubMembers.Instruction;
 
 namespace ILLoom.Transformers.Injectors;
 
-public class MethodInjector(Method injector, Method target, IInjectLocation[] locations) : IInjector
+public class MethodInjector(MethodDefinition injector, MethodDefinition target, IInjectLocation[] locations) : IInjector
 {
     public string Name => $"{injector.DeclaringType?.FullName}::{injector.Name}";
     
@@ -72,16 +71,16 @@ public class MethodInjector(Method injector, Method target, IInjectLocation[] lo
                 if (instruction.OpCode == OpCodes.Ret)
                 {
                     if (i == injectEnd - 1)
-                        instruction = new Instruction(OpCodes.Nop); // TODO: remove instruction
+                        instruction = InstructionExtensions.Create(OpCodes.Nop); // TODO: remove instruction
                     else
-                        instruction = new Instruction(OpCodes.Br, target.Body.Instructions[injectEnd].Base);
+                        instruction = InstructionExtensions.Create(OpCodes.Br, target.Body.Instructions[injectEnd]);
                 }
                 
                 if (instruction.OpCode == OpCodes.Call
                     && instruction.Operand is MethodReference { 
                         Name: "Return", DeclaringType.FullName: "LoomModLib.Injector" })
                 {
-                    instruction = new Instruction(OpCodes.Ret);
+                    instruction = InstructionExtensions.Create(OpCodes.Ret);
                 }
                 
                 if (instruction.Operand is MemberReference memberReference)
@@ -91,27 +90,24 @@ public class MethodInjector(Method injector, Method target, IInjectLocation[] lo
                 
                 if (instruction.Operand is TypeReference typeReference)
                 {
-                    instruction.Operand = target.Module.Base.ImportReference(typeReference);
+                    instruction.Operand = target.Module.ImportReference(typeReference);
                 }
                 else
                 {
                     if (instruction.Operand is MethodReference methodReference)
                     {
-                        methodReference.ReturnType = target.Module.Base.ImportReference(methodReference.ReturnType);
-                        instruction.Operand = target.Module.Base.ImportReference(methodReference);
+                        methodReference.ReturnType = target.Module.ImportReference(methodReference.ReturnType);
+                        instruction.Operand = target.Module.ImportReference(methodReference);
                     }
                     else if (instruction.Operand is FieldReference fieldReference)
                     {
-                        fieldReference.FieldType = target.Module.Base.ImportReference(fieldReference.FieldType);
-                        instruction.Operand = target.Module.Base.ImportReference(fieldReference);
+                        fieldReference.FieldType = target.Module.ImportReference(fieldReference.FieldType);
+                        instruction.Operand = target.Module.ImportReference(fieldReference);
                     }
                 }
                 
                 target.Body.ReplaceInstruction(i, instruction);
             }
-            
-            // inject the instructions
-            // target.Body.AddInstructions(injectorInstructions, offset, Program.TargetInfo.With(target.Body));
         }
 
         return InjectorApplyState.Succeeded;
@@ -125,12 +121,12 @@ public class MethodInjector(Method injector, Method target, IInjectLocation[] lo
             Code.Ldloc_1 => 1,
             Code.Ldloc_2 => 2,
             Code.Ldloc_3 => 3,
-            Code.Ldloc => new Variable((VariableDefinition)instr.Operand!).Index,
-            Code.Ldloc_S => new Variable((VariableDefinition)instr.Operand!).Index
+            Code.Ldloc => instr.GetOperand<VariableReference>().Index,
+            Code.Ldloc_S => instr.GetOperand<VariableReference>().Index
         };
         
         instr.OpCode = OpCodes.Ldloc;
-        instr.Operand = target.Body.Variables[originalIndex + offset].Base;
+        instr.Operand = target.Body.Variables[originalIndex + offset];
         
         return instr;
     }
@@ -143,22 +139,22 @@ public class MethodInjector(Method injector, Method target, IInjectLocation[] lo
             Code.Stloc_1 => 1,
             Code.Stloc_2 => 2,
             Code.Stloc_3 => 3,
-            Code.Stloc => new Variable((VariableDefinition)instr.Operand!).Index,
-            Code.Stloc_S => new Variable((VariableDefinition)instr.Operand!).Index
+            Code.Stloc => instr.GetOperand<VariableReference>().Index,
+            Code.Stloc_S => instr.GetOperand<VariableReference>().Index
         };
         
         instr.OpCode = OpCodes.Stloc;
-        instr.Operand = target.Body.Variables[originalIndex + offset].Base;
+        instr.Operand = target.Body.Variables[originalIndex + offset];
         
         return instr;
     }
     
     private Instruction OffsetLdLoca(Instruction instr, int offset)
     {
-        var originalIndex = new Variable((VariableDefinition)instr.Operand!).Index;
+        var originalIndex = instr.GetOperand<VariableReference>().Index;
         
         instr.OpCode = OpCodes.Ldloca;
-        instr.Operand = target.Body.Variables[originalIndex + offset].Base;
+        instr.Operand = target.Body.Variables[originalIndex + offset];
         
         return instr;
     }

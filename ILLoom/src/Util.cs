@@ -1,7 +1,4 @@
-﻿using ILWrapper.Containers;
-using Mono.Cecil;
-using Module = ILWrapper.Containers.Module;
-using CustomAttribute = ILWrapper.SubMembers.CustomAttribute;
+﻿using Mono.Cecil;
 
 namespace ILLoom;
 
@@ -19,20 +16,20 @@ public static class Util
     
     public static CustomAttribute GetDontCopyAttribute()
     {
-        var asmName = new AssemblyNameDefinition("LoomModLib", new Version(1, 0));
-        var asm = new Assembly(Program.AssemblyResolver.Resolve(asmName));
+        var asmName = new AssemblyNameReference("LoomModLib", new Version(1, 0));
+        var asm = Program.AssemblyResolver.Resolve(asmName);
         var type = asm.MainModule.Types.First(t => t.Name == "DontCopyAttribute");
         var ctor = type.Methods.First(m => m.Name == ".ctor");
         return new CustomAttribute(ctor);
     }
     
-    public static TypeReference ResolveType(string assemblyName, Version version, string targetSignature, Module relevantModule)
+    public static TypeReference ResolveType(string assemblyName, Version version, string targetSignature, ModuleDefinition relevantModule)
     {
         var separatorIndex = targetSignature.LastIndexOf('.');
         var ns = targetSignature[..separatorIndex];
         var path = targetSignature[(separatorIndex + 1)..].Split('/');
         var targetAssembly = Program.AssemblyResolver.Resolve(new AssemblyNameReference(assemblyName, version));
-        var targetRef = new TypeReference(ns, path[0], relevantModule.Base, targetAssembly.MainModule);
+        var targetRef = new TypeReference(ns, path[0], relevantModule, targetAssembly.MainModule);
         var target = targetRef.Resolve();
         for (var i = 1; i < path.Length; i++)
         {
@@ -56,7 +53,7 @@ public static class Util
         // create a reference to all the types in the chain of nested types the target type is in
         for (var i = 0; i < path.Length; i++)
         {
-            var type = new TypeReference(i == 0 ? @namespace : "", path[i], assembly.MainModule, Program.TargetModule.Base);
+            var type = new TypeReference(i == 0 ? @namespace : "", path[i], assembly.MainModule, Program.TargetModule);
             nestedTypes[i] = type;
         }
         

@@ -1,13 +1,14 @@
 ﻿using ILLoom.ModuleScanners.ScannerTypes;
+using ILLib.Extensions.Containers;
+using ILLib.Extensions.SubMembers;
 using LoomModLib.Attributes;
-using CustomAttribute = ILWrapper.SubMembers.CustomAttribute;
-using Type = ILWrapper.Containers.Type;
+using Mono.Cecil;
 
 namespace ILLoom.ModuleScanners;
 
 public class HoistTypeScanner : ModuleClassScanner<HoistRemapping>
 {
-    protected override HoistRemapping ReadAttribute(CustomAttribute attribute, Type owner)
+    protected override HoistRemapping ReadAttribute(CustomAttribute attribute, TypeDefinition owner)
     {
         var target = Util.CreateTypeReference(
             attribute.Get<string>(0),
@@ -19,12 +20,12 @@ public class HoistTypeScanner : ModuleClassScanner<HoistRemapping>
     
     protected override bool IncludeAttribute(CustomAttribute attribute)
     {
-        var attribType = attribute.Type;
+        var attribType = attribute.AttributeType;
         return attribType.Is<HoistTypeAttribute>() || attribType.Is<InsertTypeAttribute>();
     }
     
     protected override bool RemoveTransformer(CustomAttribute attribute)
     {
-        return attribute.Type.Is<HoistTypeAttribute>();
+        return attribute.AttributeType.Is<HoistTypeAttribute>();
     }
 }

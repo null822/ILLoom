@@ -3,16 +3,15 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using ILLoom.Transformers.TransformerTypes;
-using ILWrapper;
+using ILLib;
+using ILLib.Extensions.Containers;
 using Mono.Cecil;
-using Assembly = ILWrapper.Containers.Assembly;
-using Module = ILWrapper.Containers.Module;
 
 namespace ILLoom;
 
 public static class Program
 {
-    public static Module TargetModule => _targetAssembly.MainModule;
+    public static ModuleDefinition TargetModule => _targetAssembly.MainModule;
     public static ParentInfo TargetInfo { get; private set; }
     public static readonly Remap<MemberReference> Remapper = Remap;
     
@@ -30,7 +29,7 @@ public static class Program
     /// </summary>
     private static readonly Dictionary<string, MemberReference> HoistRemappings = [];
     
-    private static Assembly _targetAssembly = null!;
+    private static AssemblyDefinition _targetAssembly = null!;
     
     
     private static readonly ReaderParameters ReaderParameters = new()
@@ -55,7 +54,7 @@ public static class Program
         AssemblyResolver.RegisterAssemblies($"{RootDirectory}/mods");
         AssemblyResolver.RegisterAssemblies($"{RootDirectory}/libs");
         
-        _targetAssembly = Assembly.ReadAssembly(_targetPath, ReaderParameters);
+        _targetAssembly = AssemblyDefinition.ReadAssembly(_targetPath, ReaderParameters);
         
         AssemblyResolver.RegisterAssembly(_targetAssembly);
         
@@ -65,8 +64,7 @@ public static class Program
             Remapper = Remapper,
             RuntimeAssembly = new AssemblyNameReference("mscorlib", Version.Parse("4.0.0.0"))
         };
-        TargetModule.Info = TargetInfo;
-
+        
         // try
         // {
 
@@ -89,7 +87,7 @@ public static class Program
         //     
         //     Console.ForegroundColor = ConsoleColor.Red;
         //     var source = e.GetType().Module.Name;
-        //     if (source[..source.IndexOf('.')] is "ILWrapper" or "ILLoom")
+        //     if (source[..source.IndexOf('.')] is "ILLib" or "ILLoom")
         //         Console.WriteLine(e.Message);
         //     else
         //         throw;
@@ -106,7 +104,7 @@ public static class Program
         foreach (var modFileBs in modFiles)
         {
             var modFile = modFileBs.Replace('\\', '/');
-            var assembly = Assembly.ReadAssembly(modFile, ReaderParameters);
+            var assembly = AssemblyDefinition.ReadAssembly(modFile, ReaderParameters);
             var asm = System.Reflection.Assembly.LoadFile(modFile);
             
             Console.WriteLine($"Reading File: {Path.GetFileName(modFile)}");
@@ -184,7 +182,7 @@ public static class Program
         p.WaitForExit();
         
         Console.ForegroundColor = ConsoleColor.Magenta;
-        Console.WriteLine($"Process finished with exit code {p.ExitCode}.");
+        Console.WriteLine($"Target Application finished with exit code {p.ExitCode}.");
         Console.ForegroundColor = ConsoleColor.Gray;
     }
 
@@ -211,7 +209,7 @@ public static class Program
         Console.WriteLine("  - Copy Types");
         Console.ForegroundColor = ConsoleColor.Gray;
         
-        var newNamespace = TargetModule.Entrypoint?.DeclaringType?.GetRootType().Namespace;
+        var newNamespace = TargetModule.EntryPoint?.DeclaringType?.GetRootType().Namespace;
         foreach (var mod in _mods)
         {
             foreach (var type in mod.CopyTypes)
@@ -372,7 +370,8 @@ public static class Program
             {
                 if (HoistRemappings.TryGetValue(typeChain[i].FullName, out var remappedType))
                 {
-                    if (i == 0) return (T)remappedType;
+                    if (i == 0)
+                        return reference is IMemberDefinition ? (T)remappedType.Resolve() : (T)remappedType;
                     
                     typeChain[i - 1].DeclaringType = (TypeReference)remappedType;
                     return reference;
@@ -385,7 +384,7 @@ public static class Program
         
         // if the reference exists explicitly, remap it
         if (HoistRemappings.TryGetValue(reference.FullName, out var remappedMember))
-            return (T)remappedMember;
+            return reference is IMemberDefinition ? (T)remappedMember.Resolve() : (T)remappedMember;
         
         // otherwise, try to remap the declaring type
         try {

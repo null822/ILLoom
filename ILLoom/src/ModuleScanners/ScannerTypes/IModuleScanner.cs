@@ -1,8 +1,8 @@
-﻿using ILWrapper.Containers;
+﻿using Mono.Cecil;
 
 namespace ILLoom.ModuleScanners.ScannerTypes;
 
 public interface IModuleScanner<T>
 {
-    public List<T> Scan(Module module);
+    public List<T> Scan(ModuleDefinition module);
 }

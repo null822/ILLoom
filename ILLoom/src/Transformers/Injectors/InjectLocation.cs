@@ -1,5 +1,4 @@
 ﻿using Mono.Cecil.Cil;
-using MethodBody = ILWrapper.SubMembers.MethodBody;
 
 namespace ILLoom.Transformers.Injectors;
 

@@ -1,16 +1,15 @@
 ﻿using ILLoom.ModuleScanners.ScannerTypes;
 using ILLoom.Transformers;
-using ILWrapper.Containers;
+using ILLib.Extensions.Containers;
+using ILLib.Extensions.SubMembers;
 using LoomModLib.Attributes;
 using Mono.Cecil;
-using CustomAttribute = ILWrapper.SubMembers.CustomAttribute;
-using Type = ILWrapper.Containers.Type;
 
 namespace ILLoom.ModuleScanners;
 
 public class InsertTypeScanner : ModuleClassScanner<InsertTypeTransformer>
 {
-    protected override InsertTypeTransformer ReadAttribute(CustomAttribute attribute, Type owner)
+    protected override InsertTypeTransformer ReadAttribute(CustomAttribute attribute, TypeDefinition owner)
     {
         var assemblyName = attribute.Get<string>(0);
         var assemblyVersion = Version.Parse(attribute.Get<string>(1));
@@ -18,12 +17,12 @@ public class InsertTypeScanner : ModuleClassScanner<InsertTypeTransformer>
             
         var targetAssembly = Program.AssemblyResolver.Resolve(new AssemblyNameReference(assemblyName, assemblyVersion));
         
-        return new InsertTypeTransformer(owner, new Assembly(targetAssembly), targetSignature);
+        return new InsertTypeTransformer(owner, targetAssembly, targetSignature);
     }
     
     protected override bool IncludeAttribute(CustomAttribute attribute)
     {
-        return attribute.Type.Is<InsertTypeAttribute>();
+        return attribute.AttributeType.Is<InsertTypeAttribute>();
     }
     
     protected override bool RemoveTransformer(CustomAttribute attribute)

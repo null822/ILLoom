@@ -1,12 +1,13 @@
-﻿using ILLoom.ModuleScanners;
+﻿using System.Reflection;
+using ILLoom.ModuleScanners;
 using ILLoom.Transformers;
 using ILLoom.Transformers.TransformerTypes;
-using ILWrapper;
-using ILWrapper.Containers;
-using ILWrapper.SubMembers;
+using ILLib;
+using ILLib.Extensions;
+using ILLib.Extensions.Containers;
 using LoomModLib;
 using LoomModLib.Attributes;
-using Type = ILWrapper.Containers.Type;
+using Mono.Cecil;
 
 namespace ILLoom;
 
@@ -15,7 +16,7 @@ public class Mod
     /// <summary>
     /// A cloned version of the main <see cref="Module"/> of the mod
     /// </summary>
-    private readonly Module _module;
+    private readonly ModuleDefinition _module;
     
     /// <summary>
     /// The <see cref="IModConfig"/> of the mod
@@ -31,9 +32,9 @@ public class Mod
     /// <summary>
     /// An array of all <see cref="Type"/>s to be copied into the target assembly
     /// </summary>
-    public readonly List<Type> CopyTypes = [];
+    public readonly List<TypeDefinition> CopyTypes = [];
     
-    public Mod(Module module, System.Reflection.Assembly assembly)
+    public Mod(ModuleDefinition module, System.Reflection.Assembly assembly)
     {
         // clone the module without remapping
         _module = module.Clone(new ParentInfo());
@@ -77,8 +78,8 @@ public class Mod
         Injectors.AddRange(new InjectScanner().Scan(_module));
     }
 
-    private static readonly Func<CustomAttribute, bool> IsDontCopy = a => a.Type.Is<DontCopyAttribute>();
-    private static readonly Func<IMember, bool> HasDontCopy = m => m.CustomAttributes.Any(IsDontCopy);
+    private static readonly Func<CustomAttribute, bool> IsDontCopy = a => a.AttributeType.Is<DontCopyAttribute>();
+    private static readonly Func<IMemberDefinition, bool> HasDontCopy = m => m.CustomAttributes.Any(IsDontCopy);
     
     public void LoadCopyTypes()
     {
@@ -98,7 +99,7 @@ public class Mod
         }
     }
     
-    private static void RemoveDontCopyMembers(Type type)
+    private static void RemoveDontCopyMembers(TypeDefinition type)
     {
         var nestedTypes = type.NestedTypes;
         

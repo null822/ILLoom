@@ -1,14 +1,15 @@
 ﻿using ILLoom.Transformers.TransformerTypes;
-using ILWrapper;
-using ILWrapper.Members;
+using ILLib.Extensions;
+using ILLib.Extensions.Containers;
+using ILLib.Extensions.Members;
 using LoomModLib.Attributes;
-using Type = ILWrapper.Containers.Type;
+using Mono.Cecil;
 
 namespace ILLoom.Transformers;
 
-public class InsertTransformer(Type type, IMember member, string newName) : ITransformer
+public class InsertTransformer(TypeDefinition type, IMemberDefinition member, string newName) : ITransformer
 {
-    public string Name => $"{member.MemberBase.FullName} => {type.FullName} as {newName}";
+    public string Name => $"{member.FullName} => {type.FullName} as {newName}";
 
     public void Apply()
     {
@@ -16,29 +17,29 @@ public class InsertTransformer(Type type, IMember member, string newName) : ITra
         
         switch (member)
         {
-            case Field m:
+            case FieldDefinition m:
                 type.Fields.Add(PrepareMember(m.Clone(info)));
                 break;
-            case Method m:
+            case MethodDefinition m:
                 type.Methods.Add(PrepareMember(m.Clone(info)));
                 break;
-            case Property m:
+            case PropertyDefinition m:
                 type.Properties.Add(PrepareMember(m.Clone(info)));
                 break;
-            case Event m:
+            case EventDefinition m:
                 type.Events.Add(PrepareMember(m.Clone(info)));
                 break;
-            case Type m:
+            case TypeDefinition m:
                 type.NestedTypes.Add(PrepareMember(m.Clone(info)));
                 break;
         }
     }
     
-    private T PrepareMember<T>(T m) where T : IMember
+    private T PrepareMember<T>(T m) where T : IMemberDefinition
     {
-        m.MemberBase.Name = newName;
-        m.MemberBase.DeclaringType = null!;
-        m.CustomAttributes.RemoveAll(a => a.Type.Is<DontCopyAttribute>());
+        m.Name = newName;
+        m.DeclaringType = null!;
+        m.CustomAttributes.RemoveAll(a => a.AttributeType.Is<DontCopyAttribute>());
         return m;
     }
 }

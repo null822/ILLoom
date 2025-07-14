@@ -1,24 +1,21 @@
 ﻿using System.Text;
-using ILWrapper.Containers;
-using ILWrapper.Members;
-using ILWrapper.SubMembers;
 using Mono.Cecil;
-using Type = ILWrapper.Containers.Type;
+using Mono.Cecil.Cil;
 
-namespace ILWrapper;
+namespace ILLib;
 
 public delegate T Remap<T>(T? original) where T : MemberReference;
 
 public struct ParentInfo
 {
-    public Assembly? Assembly { get; set; }
-    public Module? Module { get; set; }
-    public Type? Type { get; set; }
+    public AssemblyDefinition? Assembly { get; set; }
+    public ModuleReference? Module { get; set; }
+    public TypeReference? Type { get; set; }
     
-    public Method? Method { get; set; }
-    public Field? Field { get; set; }
-    public Property? Property { get; set; }
-    public Event? Event { get; set; }
+    public MethodReference? Method { get; set; }
+    public FieldReference? Field { get; set; }
+    public PropertyReference? Property { get; set; }
+    public EventReference? Event { get; set; }
     
     public MethodBody? MethodBody { get; set; }
     
@@ -35,12 +32,12 @@ public struct ParentInfo
         
         return (T)Remapper(original);
     }
-    public T Remap<T>(T? original) where T : IMember
+    public T Remap<T>(T? original) where T : MemberReference
     {
         if (Remapper == null)
             return original!;
         
-        return (T)IMember.FromBaseRef(Remapper(original?.MemberBase));
+        return (T)Remapper(original);
     }
 
     public void RequireTypes(params ParentInfoType[] infoTypes)
@@ -48,26 +45,26 @@ public struct ParentInfo
         MissingParentInfoException.ThrowIfMissing(this, infoTypes);
     }
 
-    public ParentInfo With(Assembly? assembly)
+    public ParentInfo With(AssemblyDefinition? assembly)
     {
         Assembly = assembly;
         return this;
     }
 
-    public ParentInfo With(Module? module, bool updateOthers = true)
+    public ParentInfo With(ModuleReference? module, bool updateOthers = true)
     {
         Module = module;
-        if (updateOthers && module != null) With(module.Assembly);
+        if (updateOthers && module is ModuleDefinition definition) With(definition.Assembly);
         return this;
     }
-    public ParentInfo With(Type? type, bool updateOthers = true)
+    public ParentInfo With(TypeReference? type, bool updateOthers = true)
     {
         Type = type;
         if (updateOthers && type != null) With(type.Module);
         return this;
     }
 
-    public ParentInfo With(Method? method, bool updateOthers = true)
+    public ParentInfo With(MethodReference? method, bool updateOthers = true)
     {
         Method = method;
         if (updateOthers && method != null) With(method.DeclaringType);
@@ -81,7 +78,7 @@ public struct ParentInfo
         With(body?.Method); return this;
     }
 
-    public ParentInfo With(Field? field, bool updateOthers = true)
+    public ParentInfo With(FieldReference? field, bool updateOthers = true)
     {
         Field = field;
         if (updateOthers && field != null) With(field.DeclaringType);
@@ -89,7 +86,7 @@ public struct ParentInfo
         return this;
     }
 
-    public ParentInfo With(Property? property, bool updateOthers = true)
+    public ParentInfo With(PropertyReference? property, bool updateOthers = true)
     {
         Property = property;
         if (updateOthers && property != null) With(property.DeclaringType);
@@ -120,10 +117,9 @@ public enum ParentInfoType
     MethodBody
 }
 
-public class MissingParentInfoException : Exception
+public class MissingParentInfoException(params ParentInfoType[] missingInfo)
+    : Exception($"{nameof(ParentInfo)} is missing values for: {InfoToString(missingInfo)}")
 {
-    private MissingParentInfoException(ParentInfoType[] missingInfo) : base($"{nameof(ParentInfo)} is missing values for: {InfoToString(missingInfo)}") { }
-    
     public static void ThrowIfMissing(ParentInfo info, params ParentInfoType[] infoTypes)
     {
         var missingTypes = new List<ParentInfoType>();

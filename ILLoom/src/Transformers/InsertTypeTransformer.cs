@@ -1,25 +1,24 @@
 ﻿using ILLoom.Transformers.TransformerTypes;
-using ILWrapper;
-using ILWrapper.Containers;
+using ILLib.Extensions;
+using ILLib.Extensions.Containers;
 using LoomModLib.Attributes;
 using Mono.Cecil;
-using Type = ILWrapper.Containers.Type;
 
 namespace ILLoom.Transformers;
 
 public class InsertTypeTransformer : ITransformer
 {
-    private readonly Type _type;
-    private readonly Assembly _assembly;
+    private readonly TypeDefinition _type;
+    private readonly AssemblyDefinition _assembly;
     private readonly string _namespace;
     private readonly string[] _path;
     private readonly string _signature;
 
-    private Type? _endType;
+    private TypeDefinition? _endType;
 
     public string Name => $"{_type.FullName} as {_signature}";
     
-    public InsertTypeTransformer(Type type, Assembly assembly, string signature)
+    public InsertTypeTransformer(TypeDefinition type, AssemblyDefinition assembly, string signature)
     {
         _type = type;
         _assembly = assembly;
@@ -36,22 +35,22 @@ public class InsertTypeTransformer : ITransformer
         var targetReference = new TypeReference(
             _namespace,
             _path[0],
-            _assembly.MainModule.Base,
-            _assembly.MainModule.Base);
+            _assembly.MainModule,
+            _assembly.MainModule);
         var rootTypeDef = Program.MetadataResolver.Resolve(targetReference);
-        Type root;
+        TypeDefinition root;
         if (rootTypeDef != null) // if the root type exists, use it
         {
-            root = new Type(rootTypeDef);
+            root = rootTypeDef;
         }
         else // otherwise, create a new root type and add it to the module
         {
-            root = new Type(_namespace, _path[0], TypeAttributes.Class ^ TypeAttributes.Public);
+            root = new TypeDefinition(_namespace, _path[0], TypeAttributes.Class ^ TypeAttributes.Public);
             _assembly.MainModule.Types.Add(root);
         }
         
         // create an array for the nested types
-        var nestedTypes = new Type[_path.Length];
+        var nestedTypes = new TypeDefinition[_path.Length];
         
         // add the root type to the nested types
         nestedTypes[0] = root;
@@ -67,7 +66,7 @@ public class InsertTypeTransformer : ITransformer
             if (type == null)
             {
                 // note that the namespace must be an empty string for the nested types to be added to the assembly
-                type = new Type("", _path[i], TypeAttributes.Class | TypeAttributes.Public);
+                type = new TypeDefinition("", _path[i], TypeAttributes.Class | TypeAttributes.Public);
                 if (i != 0)
                 {
                     type.Attributes |= TypeAttributes.NestedPublic | TypeAttributes.NestedPrivate;
@@ -78,7 +77,7 @@ public class InsertTypeTransformer : ITransformer
         
         // remap the name of the type to insert and add it to the nested types
         _endType = _type.Clone(Program.TargetInfo.With(_assembly.MainModule));
-        _endType.CustomAttributes.RemoveAll(a => a.Type.Is<DontCopyAttribute>());
+        _endType.CustomAttributes.RemoveAll(a => TypeExtensions.Is<DontCopyAttribute>(a.AttributeType));
         _endType.Name = _path[^1];
         _endType.DeclaringType = null;
         nestedTypes[^1] = _endType;

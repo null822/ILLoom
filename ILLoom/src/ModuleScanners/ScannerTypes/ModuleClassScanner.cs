@@ -1,6 +1,4 @@
-﻿using ILWrapper.Containers;
-using CustomAttribute = ILWrapper.SubMembers.CustomAttribute;
-using Type = ILWrapper.Containers.Type;
+﻿using Mono.Cecil;
 
 namespace ILLoom.ModuleScanners.ScannerTypes;
 
@@ -8,11 +6,11 @@ public abstract class ModuleClassScanner<T> : IModuleScanner<T>
 {
     private readonly List<T> _results = [];
     
-    protected abstract T ReadAttribute(CustomAttribute attribute, Type owner);
+    protected abstract T ReadAttribute(CustomAttribute attribute, TypeDefinition owner);
     protected abstract bool IncludeAttribute(CustomAttribute attribute);
     protected abstract bool RemoveTransformer(CustomAttribute attribute);
     
-    public List<T> Scan(Module module)
+    public List<T> Scan(ModuleDefinition module)
     {
         foreach (var type in module.Types)
         {
@@ -23,7 +21,7 @@ public abstract class ModuleClassScanner<T> : IModuleScanner<T>
         return _results;
     }
     
-    private void ScanType(Type type)
+    private void ScanType(TypeDefinition type)
     {
         for (var i = 0; i < type.CustomAttributes.Count; i++)
         {

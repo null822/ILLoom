@@ -1,12 +1,13 @@
 ﻿using ILLoom.ModuleScanners.ScannerTypes;
-using ILWrapper.Containers;
+using ILLib.Extensions.Containers;
 using LoomModLib;
+using Mono.Cecil;
 
 namespace ILLoom.ModuleScanners;
 
 public class ConfigScanner(System.Reflection.Assembly assembly) : IModuleScanner<IModConfig>
 {
-    public List<IModConfig> Scan(Module module)
+    public List<IModConfig> Scan(ModuleDefinition module)
     {
         var configs = new List<IModConfig>();
         

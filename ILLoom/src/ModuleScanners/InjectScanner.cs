@@ -1,23 +1,22 @@
 ﻿using ILLoom.ModuleScanners.ScannerTypes;
 using ILLoom.Transformers.Injectors;
 using ILLoom.Transformers.TransformerTypes;
-using ILWrapper;
-using ILWrapper.Members;
+using ILLib.Extensions;
+using ILLib.Extensions.Containers;
+using ILLib.Extensions.SubMembers;
 using LoomModLib.Attributes;
 using Mono.Cecil;
-using CustomAttribute = ILWrapper.SubMembers.CustomAttribute;
-using Type = ILWrapper.Containers.Type;
 
 namespace ILLoom.ModuleScanners;
 
 public class InjectScanner : ModuleMemberScanner<IInjector>
 {
-    protected override IInjector ReadAttribute(CustomAttribute attribute, IMember owner)
+    protected override IInjector ReadAttribute(CustomAttribute attribute, IMemberDefinition owner)
     {
         //TODO: resolve injector dependencies
         
         
-        if (owner is Field)
+        if (owner is FieldDefinition)
         {
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine($"TODO: Field Injector ({owner})");
@@ -28,7 +27,7 @@ public class InjectScanner : ModuleMemberScanner<IInjector>
         
         // resolve inject locations
         var locationAttribs = owner.CustomAttributes
-            .Where(a => a.Type.Extends<InjectLocationAttribute>())
+            .Where(a => a.AttributeType.Resolve().Extends<InjectLocationAttribute>())
             .ToArray();
         if (locationAttribs.Length == 0)
             throw new MissingInjectLocationException(owner);
@@ -37,47 +36,46 @@ public class InjectScanner : ModuleMemberScanner<IInjector>
         {
             var attrib = locationAttribs[i];
             
-            if (attrib.Type.Is<InjectHeadAttribute>())
+            if (attrib.AttributeType.Is<InjectHeadAttribute>())
                 locations[i] = new InjectHead();
-            else if (attrib.Type.Is<InjectIlIndexAttribute>())
+            else if (attrib.AttributeType.Is<InjectIlIndexAttribute>())
                 locations[i] = new InjectIlIndex(attrib.ConstructorArguments[0].As<int>());
-            else if (attrib.Type.Is<InjectBeforeReturnAttribute>())
+            else if (attrib.AttributeType.Is<InjectBeforeReturnAttribute>())
                 locations[i] = new InjectBeforeReturn(attrib.ConstructorArguments[0].As<int>());
         }
         
         
         // resolve inject method and target
         var targetMember = attribute.Get<string>(0);
-        var targetType = new Type(
-            ((TypeReference)Program.Remap(attribute.Get<TypeReference>(1))).Resolve());
+        var targetType = Program.Remap(attribute.Get<TypeReference>(1)).Resolve();
         
-        Method method;
-        Method target;
+        MethodDefinition method;
+        MethodDefinition target;
         
-        if (owner is Property p)
+        if (owner is PropertyDefinition p)
         {
             var propertyMethodAttrib = p.CustomAttributes
-                .FirstOrDefault(a => a!.Type.Is<InjectPropertyLocation>(), null);
+                .FirstOrDefault(a => a!.AttributeType.Is<InjectPropertyLocation>(), null);
             if (propertyMethodAttrib == null)
                 throw new MissingInjectPropertyLocationException(p);
             var propertyMethod = propertyMethodAttrib.Get<PropertyMethod>(0);
             method = propertyMethod switch
             {
-                PropertyMethod.Getter => p.Getter!,
-                PropertyMethod.Setter => p.Setter!,
+                PropertyMethod.Getter => p.GetMethod,
+                PropertyMethod.Setter => p.SetMethod,
             };
             
             var targetProperty = targetType.Properties
                 .First(m => m.Name == targetMember);
             target = propertyMethod switch
             {
-                PropertyMethod.Getter => targetProperty.Getter!,
-                PropertyMethod.Setter => targetProperty.Setter!,
+                PropertyMethod.Getter => targetProperty.GetMethod,
+                PropertyMethod.Setter => targetProperty.SetMethod!,
             };
         }
         else
         {
-            method = (Method)owner;
+            method = (MethodDefinition)owner;
             target = targetType.Methods
                 .First(m => m.Name == targetMember && m.Parameters.Matches(method.Parameters));
         }
@@ -87,7 +85,7 @@ public class InjectScanner : ModuleMemberScanner<IInjector>
     
     protected override bool IncludeAttribute(CustomAttribute attribute)
     {
-        return attribute.Type.Is<InjectAttribute>();
+        return attribute.AttributeType.Is<InjectAttribute>();
     }
 
     protected override bool RemoveTransformer(CustomAttribute attribute)
@@ -96,8 +94,8 @@ public class InjectScanner : ModuleMemberScanner<IInjector>
     }
 }
 
-public class MissingInjectLocationException(IMember owner)
-    : Exception($"Injector {owner.MemberBase.FullName} is missing an InjectLocation");
-public class MissingInjectPropertyLocationException(Property owner)
-    : Exception($"Property Injector {owner.MemberBase.FullName} is missing an InjectPropertyLocation");
+public class MissingInjectLocationException(IMemberDefinition owner)
+    : Exception($"Injector {owner.FullName} is missing an InjectLocation");
+public class MissingInjectPropertyLocationException(PropertyDefinition owner)
+    : Exception($"Property Injector {owner.FullName} is missing an InjectPropertyLocation");
     

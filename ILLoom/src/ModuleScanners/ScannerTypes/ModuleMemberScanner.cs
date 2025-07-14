@@ -1,8 +1,5 @@
-﻿using ILWrapper;
-using ILWrapper.Containers;
-using ILWrapper.MemberSet;
-using ILWrapper.SubMembers;
-using Type = ILWrapper.Containers.Type;
+﻿using Mono.Cecil;
+using Mono.Collections.Generic;
 
 namespace ILLoom.ModuleScanners.ScannerTypes;
 
@@ -15,7 +12,7 @@ public abstract class ModuleMemberScanner<T> : IModuleScanner<T>
     /// </summary>
     /// <param name="attribute">the attribute to scan</param>
     /// <param name="owner">the <see cref="IMember"/> that has the attribute</param>
-    protected abstract T ReadAttribute(CustomAttribute attribute, IMember owner);
+    protected abstract T ReadAttribute(CustomAttribute attribute, IMemberDefinition owner);
     /// <summary>
     /// Returns whether to read an attribute (true), or ignore it (false)
     /// </summary>
@@ -28,7 +25,7 @@ public abstract class ModuleMemberScanner<T> : IModuleScanner<T>
     /// <param name="attribute">the attribute</param>
     protected abstract bool RemoveTransformer(CustomAttribute attribute);
     
-    public List<T> Scan(Module module)
+    public List<T> Scan(ModuleDefinition module)
     {
         foreach (var type in module.Types)
         {
@@ -39,7 +36,7 @@ public abstract class ModuleMemberScanner<T> : IModuleScanner<T>
         return _results;
     }
     
-    private void Scan(Type type)
+    private void Scan(TypeDefinition type)
     {
         Scan(type.Methods);
         Scan(type.Fields);
@@ -48,7 +45,7 @@ public abstract class ModuleMemberScanner<T> : IModuleScanner<T>
         Scan(type.NestedTypes);
     }
     
-    private void Scan<T2>(IMemberSet<T2> members) where T2 : IMember
+    private void Scan<T2>(Collection<T2> members) where T2 : IMemberDefinition
     {
         foreach (var member in members)
         {
@@ -56,7 +53,7 @@ public abstract class ModuleMemberScanner<T> : IModuleScanner<T>
         }
     }
     
-    private void Scan(IMember member)
+    private void Scan(IMemberDefinition member)
     {
         for (var i = 0; i < member.CustomAttributes.Count; i++)
         {
@@ -76,7 +73,7 @@ public abstract class ModuleMemberScanner<T> : IModuleScanner<T>
             }
         }
 
-        if (member is Type t)
+        if (member is TypeDefinition t)
         {
             Scan(t);
         }

@@ -1,42 +1,30 @@
-﻿using ILWrapper.MemberSet;
+﻿using ILLib.Extensions.Containers;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using Type = ILWrapper.Containers.Type;
 
-namespace ILWrapper.SubMembers;
+namespace ILLib.Extensions.SubMembers;
 
-public class Instruction : IMember<Instruction, Mono.Cecil.Cil.Instruction>, ISubMember
+public static class InstructionExtensions
 {
-    public Mono.Cecil.Cil.Instruction Base { get; }
-    static TypeConvert<Mono.Cecil.Cil.Instruction, Instruction> IMember<Instruction, Mono.Cecil.Cil.Instruction>.FromBase => instance => new Instruction(instance);
-    
-    public Instruction(Mono.Cecil.Cil.Instruction @base)
+    public static Instruction Create(OpCode opCode, object? operand = null)
     {
-        Base = @base;
-    }
-
-    public Instruction() : this(Mono.Cecil.Cil.Instruction.Create(OpCodes.Nop)) {}
-
-    public Instruction(OpCode opCode, object? operand = null) : this()
-    {
-        OpCode = opCode;
-        Operand = operand;
+        var instruction = Instruction.Create(OpCodes.Nop);
+        instruction.OpCode = opCode;
+        instruction.Operand = operand;
+        return instruction;
     }
     
-    public string FullName => $"[{Offset}] {OpCode}{(Operand == null ? "" : $" {Operand}")}";
-    
-    public int Size => Base.GetSize();
-    
-    public int Offset { get => Base.Offset; set => Base.Offset = value; }
-    public OpCode OpCode { get => Base.OpCode; set => Base.OpCode = value; }
-    public object? Operand { get => Base.Operand; set => Base.Operand = value; }
-    
-    public Instruction Clone(ParentInfo info)
+    public static T GetOperand<T>(this Instruction self)
     {
-        MissingParentInfoException.ThrowIfMissing(info, ParentInfoType.Module);
-        var module = info.Module!;
-
-        var operand = Operand;
+        return (T)self.Operand;
+    }
+    
+    public static Instruction Clone(this Instruction self, ParentInfo info)
+    {
+        if (info.Module is not ModuleDefinition module)
+            throw new MissingParentInfoException(ParentInfoType.Module);
+        
+        var operand = self.Operand;
         
         // remap hoists
         switch (operand)
@@ -82,12 +70,12 @@ public class Instruction : IMember<Instruction, Mono.Cecil.Cil.Instruction>, ISu
         switch (operand)
         {
             case TypeReference typeRef:
-                operand = module.Base.ImportReference(typeRef);
+                operand = module.ImportReference(typeRef);
                 break;
             case MethodReference methodRef:
             {
-                methodRef.ReturnType = module.Base.ImportReference(methodRef.ReturnType); 
-                var newMethodRef = module.Base.ImportReference(methodRef);
+                methodRef.ReturnType = module.ImportReference(methodRef.ReturnType); 
+                var newMethodRef = module.ImportReference(methodRef);
             
                 if (newMethodRef.HasThis != methodRef.HasThis) // ensure static methods are invoked statically, and vice versa
                     newMethodRef.HasThis = methodRef.HasThis;
@@ -95,17 +83,13 @@ public class Instruction : IMember<Instruction, Mono.Cecil.Cil.Instruction>, ISu
                 break;
             }
             case FieldReference fieldRef:
-                fieldRef.FieldType = module.Base.ImportReference(fieldRef.FieldType);
-                operand = module.Base.ImportReference(fieldRef);
+                fieldRef.FieldType = module.ImportReference(fieldRef.FieldType);
+                operand = module.ImportReference(fieldRef);
                 break;
         }
-        
-        var clone = new Instruction
-        {
-            OpCode = OpCode,
-            Operand = operand,
-            Offset = Offset
-        };
+
+        var clone = Create(self.OpCode, operand);
+        clone.Offset = self.Offset;
         
         return clone;
     }
@@ -125,12 +109,12 @@ public class Instruction : IMember<Instruction, Mono.Cecil.Cil.Instruction>, ISu
         
         if (operand is TypeReference typeReference)
         {
-            Type.TryChangeAssembly(typeReference, newRuntimeAssembly, resolver, out var remappedType);
+            typeReference.TryChangeAssembly(newRuntimeAssembly, resolver, out var remappedType);
             memberRef = remappedType;
         }
         else
         {
-            Type.TryChangeAssembly(memberRef.DeclaringType, newRuntimeAssembly, resolver, out var remappedType);
+            memberRef.DeclaringType.TryChangeAssembly(newRuntimeAssembly, resolver, out var remappedType);
             if (memberRef is GenericInstanceMethod genericInstanceMethod)
             {
                 genericInstanceMethod.ElementMethod.DeclaringType = remappedType;
@@ -142,10 +126,5 @@ public class Instruction : IMember<Instruction, Mono.Cecil.Cil.Instruction>, ISu
         }
         
         return (T)(object)memberRef;
-    }
-    
-    public override string ToString()
-    {
-        return FullName;
     }
 }

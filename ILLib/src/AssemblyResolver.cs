@@ -1,7 +1,6 @@
-﻿using ILWrapper.Containers;
-using Mono.Cecil;
+﻿using Mono.Cecil;
 
-namespace ILLoom;
+namespace ILLib;
 
 public class AssemblyResolver : IAssemblyResolver
 {
@@ -9,7 +8,7 @@ public class AssemblyResolver : IAssemblyResolver
 
     public AssemblyDefinition Resolve(AssemblyNameReference assemblyName)
         => Resolve(assemblyName, new ReaderParameters());
-
+    
     public AssemblyDefinition Resolve(AssemblyNameReference assemblyName, ReaderParameters parameters)
     {
         if (_assemblies.TryGetValue(assemblyName.Name, out var assemblies)
@@ -20,20 +19,20 @@ public class AssemblyResolver : IAssemblyResolver
 
         throw new AssemblyNotFoundException(assemblyName);
     }
-
-    public void RegisterAssembly(Assembly assembly)
+    
+    public void RegisterAssembly(AssemblyDefinition assembly)
     {
         var name = assembly.Name;
         _assemblies.TryAdd(name.Name, 
             new Dictionary<Version, AssemblyDefinition>
             {
-                { name.Version, assembly.Base }
+                { name.Version, assembly }
             });
     }
     
     public void RegisterAssembly(string assemblyPath, ReaderParameters? readerParameters = null)
     {
-        var asm = Assembly.ReadAssembly(assemblyPath, readerParameters ?? new ReaderParameters());
+        var asm = AssemblyDefinition.ReadAssembly(assemblyPath, readerParameters ?? new ReaderParameters());
         RegisterAssembly(asm);
     }
     

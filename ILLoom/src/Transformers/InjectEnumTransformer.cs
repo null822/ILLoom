@@ -1,19 +1,21 @@
 ﻿using ILLoom.Transformers.TransformerTypes;
-using ILWrapper.Members;
+using ILLib.Extensions;
+using ILLib.Extensions.Containers;
+using ILLib.Extensions.Members;
 using LoomModLib.Attributes;
-using Type = ILWrapper.Containers.Type;
+using Mono.Cecil;
 
 namespace ILLoom.Transformers;
 
-public class InjectEnumTransformer(Type injector, Type target) : ITransformer
+public class InjectEnumTransformer(TypeDefinition injector, TypeDefinition target) : ITransformer
 {
-    private readonly Field[] _fields = injector.Fields.ToArray();
+    private readonly FieldDefinition[] _fields = injector.Fields.ToArray();
     
     public string Name { get; } = $"{injector.FullName} => {target.FullName}";
     
     public void Apply()
     {
-        var info = target.Info;
+        var info = target.get_Info();
         info.Remapper = Program.Remapper;
         
         foreach (var field in _fields)
@@ -29,12 +31,12 @@ public class InjectEnumTransformer(Type injector, Type target) : ITransformer
             }
             
             var fieldClone = field.Clone(info);
-            fieldClone.CustomAttributes.RemoveAll(a => a.Type.Is<DontCopyAttribute>());
-            fieldClone.CustomAttributes.RemoveAll(a => a.Type.Is<ForceEnumValueAttribute>());
+            fieldClone.CustomAttributes.RemoveAll(a => a.AttributeType.Is<DontCopyAttribute>());
+            fieldClone.CustomAttributes.RemoveAll(a => a.AttributeType.Is<ForceEnumValueAttribute>());
             fieldClone.FieldType = target;
             
             // find next available constant value, unless we should force the value
-            if (!field.CustomAttributes.Any(a => a.Type.Is<ForceEnumValueAttribute>()))
+            if (!field.CustomAttributes.Any(a => a.AttributeType.Is<ForceEnumValueAttribute>()))
             {
                 for (var i = (int)fieldClone.Constant!;; i++)
                 {

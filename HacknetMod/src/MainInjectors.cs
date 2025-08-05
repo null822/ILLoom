@@ -5,7 +5,7 @@ using LoomModLib.Attributes;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace TestMod;
+namespace HacknetMod;
 
 public class MainInjectors
 {

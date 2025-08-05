@@ -3,7 +3,7 @@ using Game;
 using LoomModLib;
 using LoomModLib.Attributes;
 
-namespace TestMod;
+namespace HacknetMod;
 
 public class ExampleInjectors
 {

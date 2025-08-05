@@ -7,7 +7,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace TestMod;
 
-public class Test
+public class MainInjectors
 {
     [Inject(".cctor", typeof(Settings))]
     [InjectIlIndex(82)]

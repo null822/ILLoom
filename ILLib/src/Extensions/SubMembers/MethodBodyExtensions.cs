@@ -26,11 +26,11 @@ public static class MethodBodyExtensions
     
     public static void BindReferencedInstructions(this MethodBody self)
     {
-        for (var i = 0; i < self.Instructions.Count; i++)
+        foreach (var instruction in self.Instructions)
         {
-            if (self.Instructions[i].Operand is Instruction referencedInstruction)
+            if (instruction.Operand is Instruction referencedInstruction)
             {
-                self.Instructions[i].Operand = self.Instructions[self.GetInstructionIndex(referencedInstruction.Offset)];
+                instruction.Operand = self.Instructions[self.GetInstructionIndex(referencedInstruction.Offset)];
             }
         }
     }
@@ -40,10 +40,11 @@ public static class MethodBodyExtensions
         var runningIlOffset = 0;
         for (var i = 0; i < self.Instructions.Count; i++)
         {
-            var instruction = self.Instructions[i];
             if (runningIlOffset == ilOffset)
                 return i;
-            runningIlOffset += instruction.GetSize();
+            if (runningIlOffset > ilOffset)
+                break;
+            runningIlOffset += self.Instructions[i].GetSize();
         }
         
         throw new Exception($"Invalid IL Offset {ilOffset} for {nameof(MethodBody)} {self}");

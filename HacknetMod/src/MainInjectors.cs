@@ -34,13 +34,21 @@ public class MainInjectors
         // show all crashes
         Settings.recoverFromErrorsSilently = false;
     }
-    
+
+    [HoistType]
+    private class OS
+    {
+        [Hoist]
+        public int totalRam;
+    }
     
     [Inject("switchTheme", typeof(ThemeManager))]
     [InjectHead]
     private void OverrideTheme(object osObject, OSTheme theme)
     {
         theme = OSTheme.HackerGreen;
+        var os = (OS)osObject;
+        os.totalRam += 1000;
     }
     
     [HoistType]
